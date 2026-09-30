@@ -37,8 +37,8 @@ function stats(rows){
   const known=wins+losses+draws,total=rows.length,unknown=total-known,p=known?wins/known:null,z=1.959963984540054;
   let low=null,high=null;
   if(known){const denom=1+z*z/known,center=(p+z*z/(2*known))/denom,radius=z*Math.sqrt(p*(1-p)/known+z*z/(4*known*known))/denom;low=Math.max(0,center-radius);high=Math.min(1,center+radius);}
-  // User scenario: apply 30% only to the 78 investigated early-ended unknowns.
-  const eligible=rows.filter(r=>r.result==='unknown'&&r.investigation?.death_clock!=null&&!r.investigation.has_afterbattle).length;
+  // User scenario: every replay without a final report is assumed to be an early departure.
+  const eligible=rows.filter(r=>r.result==='unknown'&&r.result_status==='no_result_block').length;
   const unassigned=unknown-eligible,expectedWins=wins+.3*eligible;
   const estimate=total&&unassigned===0?expectedWins/total:null;
   return {wins,losses,draws,known,total,unknown,p,low,high,eligible,unassigned,expectedWins,estimate,prestige:metricStats(rows,'comp7PrestigePoints'),rating:metricStats(rows,'rating_delta'),boundLow:total?wins/total:null,boundHigh:total?(wins+unknown)/total:null};
@@ -83,7 +83,7 @@ function renderOverview(all){
   const coverage=`有值 ${m.count} / ${all.total} 场 · 缺失 ${all.total-m.count} 场`;
   const cards=isWin?[
     ['已知胜率',pct(all.p),`${all.wins} 胜 · ${all.losses} 负 · ${all.draws} 平`],
-    ['估计胜率 · 30% 情景',pct(all.estimate),all.unassigned?'含未纳入估计的未知场':`${all.wins} + ${all.eligible} × 30% 预计胜场`],
+    ['估计胜率 · 30% 情景',pct(all.estimate),all.unassigned?'含结果异常场，未纳入估计':`${all.wins} + ${all.eligible} × 30% 预计胜场`],
     ['当前对局',number(all.total),coverage],
     ['已知胜率 · 95% 区间',`${pct(all.low)}–${pct(all.high)}`,'Wilson 区间，仅基于已知胜负'],
     ['含未知的胜率范围',`${pct(all.boundLow)}–${pct(all.boundHigh)}`,'未知全负 → 未知全胜'],
@@ -98,7 +98,7 @@ function renderOverview(all){
   ];
   $('kpis').innerHTML=cards.map(([label,value,hint],i)=>`<div class="kpi ${i===0?'primary-kpi':''}"><small>${label}</small><strong>${value}</strong><span>${hint}</span></div>`).join('');
   $('scenario-note').hidden=!isWin;
-  $('scenario-note').textContent='按你的估计：此前已调查的提前结束录像胜率取 30%。估计胜率 =（已知胜场 + 已调查的提前结束场数 × 30%）÷ 总场数。筛选后的各组也统一按 30% 分配，这是情景假设。此情景仅用于胜率，不改写逐场结果，也不补估声望或积分。新增及其他未调查的未知场不套用此值。';
+  $('scenario-note').textContent='按你的规定：所有没有最终战报的对局，一律假设为提前离场，胜率取 30%，包括新增及未调查的录像。估计胜率 =（已知胜场 + 无最终战报场数 × 30%）÷ 总场数。筛选后的各组也统一按此规则计算。此情景仅用于胜率，不改写逐场实际结果，也不补估声望或积分；已有战报但结果异常的对局不按无战报处理。';
   $('result-note').textContent=isWin?'比较胜负结果，保留未知比例、置信区间和 30% 情景。':metric==='rating'?'比较本人每场实际加减分。场均反映有值对局的得分效率，净变化是这些对局的合计。胜局和负局分别统计；缺失场不补估。':'比较本人声望表现。显示均值、中位数和分布，并分别比较胜局、负局。声望保留原值，可超过 200。';
 }
 function renderGroupTable(list,all){
@@ -115,7 +115,7 @@ function renderGroupTable(list,all){
     const missingCell=`<td class="unknown">${missing}<span class="small">${pct(g.total?missing/g.total:null)}</span></td>`;
     const outcomes=`${g.wins} / ${g.losses} / ${g.draws}`;
     const content=isWin?
-      `<td>${g.total} / ${g.known}</td><td>${outcomes}</td><td class="estimate-cell">${pct(g.estimate)}<span class="small">${g.unassigned?'其他未知未估计':g.eligible?'提前结束按 30%':'无须补估'}</span></td><td class="rate-cell"><div class="rate-main"><b>${pct(g.p)}</b><span class="ci">${pct(g.low)}–${pct(g.high)}</span></div>${g.p!=null?`<div class="track"><i class="interval" style="left:${g.low*100}%;width:${(g.high-g.low)*100}%"></i><i class="point" style="left:${g.p*100}%"></i></div>`:''}</td>${difference}${missingCell}<td class="bounds-col">${pct(g.boundLow)}–${pct(g.boundHigh)}</td>`:
+      `<td>${g.total} / ${g.known}</td><td>${outcomes}</td><td class="estimate-cell">${pct(g.estimate)}<span class="small">${g.unassigned?'结果异常未估计':g.eligible?'无战报按 30%':'无须补估'}</span></td><td class="rate-cell"><div class="rate-main"><b>${pct(g.p)}</b><span class="ci">${pct(g.low)}–${pct(g.high)}</span></div>${g.p!=null?`<div class="track"><i class="interval" style="left:${g.low*100}%;width:${(g.high-g.low)*100}%"></i><i class="point" style="left:${g.p*100}%"></i></div>`:''}</td>${difference}${missingCell}<td class="bounds-col">${pct(g.boundLow)}–${pct(g.boundHigh)}</td>`:
       `<td>${g.total} / ${m.count}</td><td class="metric-primary ${metric==='rating'&&m.mean!=null?(m.mean<0?'negative':'positive'):''}">${fmt(m.mean)}</td><td>${fmt(m.median)}<span class="small">${fmt(m.q1)} ～ ${fmt(m.q3)}</span></td><td>${metric==='rating'?signed(m.total):fmt(m.win.mean)+' / '+fmt(m.loss.mean)}${metric==='prestige'?`<span class="small">有值 ${m.win.count} 胜 / ${m.loss.count} 负</span>`:''}</td><td>${metric==='rating'?fmt(m.win.mean)+' / '+fmt(m.loss.mean)+`<span class="small">有值 ${m.win.count} 胜 / ${m.loss.count} 负</span>`:outcomes}</td>${difference}${missingCell}`;
     return `<tr ${g.key===selectedGroup?'class="selected"':''}>${title}${content}</tr>`;
   }).join(''):'<tr><td colspan="8" class="empty">没有符合条件的分组。试着放宽筛选或降低最小有值场数。</td></tr>';
@@ -126,7 +126,7 @@ function render(){
   const list=[...groups.entries()].map(([key,rows])=>({key,rows,...stats(rows)})).filter(g=>resultSummary(g,state.metric).count>=state.min);
   list.sort((a,b)=>compareResults(a,b,state.metric,state.sort));
   renderOverview(all);
-  $('quality').innerHTML=`<strong>数据覆盖：</strong>当前 ${all.unknown} 场结果未知，其中 ${all.eligible} 场已确认在阵亡后、结算前结束录像；其余 ${all.unassigned} 场未纳入 30% 情景。${all.unknown?'<button id="inspect-unknown">查看未知场</button>':''}`;
+  $('quality').innerHTML=`<strong>数据覆盖：</strong>当前 ${all.unknown} 场结果未知，其中 ${all.eligible} 场无最终战报，统一假设提前离场并按 30% 估计。${all.unassigned?`另有 ${all.unassigned} 场结果异常，未纳入估计。`:''}${all.unknown?'<button id="inspect-unknown">查看未知场</button>':''}`;
   if($('inspect-unknown'))$('inspect-unknown').onclick=()=>{state.filters=state.filters.filter(f=>f.key!=='result').concat([{key:'result',values:['未知']}]);selectedGroup=null;renderControls();render();};
   const config=RESULTS[state.metric];
   $('groups-title').textContent=config.label+' · 分组比较';
@@ -164,7 +164,7 @@ function showDetail(r){
   const participants=side=>{
     return participantsTable(r,side);
   };
-  $('detail-body').innerHTML=`<h2>${esc(r.tags.map)} · ${esc(r.tags.vehicle)}</h2><p class="hint">${esc(r.started_at.replace('T',' '))} · ${esc(r.tags.side)} · ${resultName[r.result]}${!r.vehicle?' · 车辆来自文件头，未用战报复核':''}</p><div class="tag-list">${['vehicle_class','self_rank','completeness','recording_end'].map(k=>`<span>${esc(dimension(k).label)}：${esc(r.tags[k])}</span>`).join('')}</div>${r.result==='unknown'?'<div class="note">最终结果未知。阵亡与提前结束录制均不等于整场失败；缺失的伤害、积分或分段也不是 0。</div>':''}<div class="detail-grid"><div class="detail-card"><h3>个人表现与积分</h3><dl class="stat-list">${metrics.map(([k,v])=>`<div><dt>${k}</dt><dd>${k==='积分变化'?signed(v):number(v)}</dd></div>`).join('')}</dl></div><div class="detail-card"><h3>录制时间线</h3><p class="hint">以下均为录像内秒数；事件来自实际数据包。</p><div class="timeline">${timeline.length?timeline.sort((a,b)=>a[0]-b[0]).map(([t,s])=>`<p><b>${t.toFixed(1)}s</b>${s}</p>`).join(''):'<p class="hint">此场未做二进制调查。</p>'}</div>${event?.seconds_from_death_to_end!=null?`<p class="hint">阵亡后继续记录 ${event.seconds_from_death_to_end.toFixed(1)} 秒。</p>`:''}${event?.seconds_end_to_next_start!=null?`<p class="hint">下一场录像约在结束后 ${event.seconds_end_to_next_start.toFixed(0)} 秒开始。</p>`:''}</div></div><h3>全场赛后战报 · ${r.players.length?r.players.length+' 人':'未记录'}</h3><p class="hint">双方按声望从高到低排列，本人高亮。全员 19 项汇总来自最终战报；不代表全员完整位置或事件轨迹。精确积分变化仅本人可见。声望保留原值，可超过 200。</p><section class="team-report"><h3>我方 · 含本人</h3>${participants(true)}</section><section class="team-report"><h3>对方</h3>${participants(false)}</section><h3>原始录像与追溯</h3><p class="path">${esc(r.replay_path)}</p><p class="hint">SHA-256：${esc(r.sha256)}<br>出生点配置坐标：${esc(JSON.stringify(r.spawn_points))}；这是队伍配置点，不是实测轨迹。</p><div class="detail-actions"><button id="copy-path">复制录像路径</button><a class="download" href="/replay/${encodeURIComponent(r.id)}" download>下载原始录像</a></div>`;
+  $('detail-body').innerHTML=`<h2>${esc(r.tags.map)} · ${esc(r.tags.vehicle)}</h2><p class="hint">${esc(r.started_at.replace('T',' '))} · ${esc(r.tags.side)} · ${resultName[r.result]}${!r.vehicle?' · 车辆来自文件头，未用战报复核':''}</p><div class="tag-list">${['vehicle_class','self_rank','completeness','recording_end'].map(k=>`<span>${esc(dimension(k).label)}：${esc(r.tags[k])}</span>`).join('')}</div>${r.result==='unknown'?`<div class="note">最终结果未知。${r.result_status==='no_result_block'?'按规定假设提前离场，本场以 30% 胜率参与情景估计。':''}缺失的伤害、积分或分段仍保持未知。</div>`:''}<div class="detail-grid"><div class="detail-card"><h3>个人表现与积分</h3><dl class="stat-list">${metrics.map(([k,v])=>`<div><dt>${k}</dt><dd>${k==='积分变化'?signed(v):number(v)}</dd></div>`).join('')}</dl></div><div class="detail-card"><h3>录制时间线</h3><p class="hint">以下均为录像内秒数；事件来自实际数据包。</p><div class="timeline">${timeline.length?timeline.sort((a,b)=>a[0]-b[0]).map(([t,s])=>`<p><b>${t.toFixed(1)}s</b>${s}</p>`).join(''):'<p class="hint">此场未做二进制调查。</p>'}</div>${event?.seconds_from_death_to_end!=null?`<p class="hint">阵亡后继续记录 ${event.seconds_from_death_to_end.toFixed(1)} 秒。</p>`:''}${event?.seconds_end_to_next_start!=null?`<p class="hint">下一场录像约在结束后 ${event.seconds_end_to_next_start.toFixed(0)} 秒开始。</p>`:''}</div></div><h3>全场赛后战报 · ${r.players.length?r.players.length+' 人':'未记录'}</h3><p class="hint">双方按声望从高到低排列，本人高亮。全员 19 项汇总来自最终战报；不代表全员完整位置或事件轨迹。精确积分变化仅本人可见。声望保留原值，可超过 200。</p><section class="team-report"><h3>我方 · 含本人</h3>${participants(true)}</section><section class="team-report"><h3>对方</h3>${participants(false)}</section><h3>原始录像与追溯</h3><p class="path">${esc(r.replay_path)}</p><p class="hint">SHA-256：${esc(r.sha256)}<br>出生点配置坐标：${esc(JSON.stringify(r.spawn_points))}；这是队伍配置点，不是实测轨迹。</p><div class="detail-actions"><button id="copy-path">复制录像路径</button><a class="download" href="/replay/${encodeURIComponent(r.id)}" download>下载原始录像</a></div>`;
   $('copy-path').onclick=async()=>{try{await navigator.clipboard.writeText(r.replay_path);$('copy-path').textContent='路径已复制';}catch{$('copy-path').textContent='请在上方选中路径复制';}};
   $('detail').showModal();
 }

@@ -120,7 +120,8 @@ def build_data(evidence=EVIDENCE, investigation_evidence=None):
         cls = b.get('vehicle_class') or classes.get(vehicle)
         event = events.get(b['file'])
         death_state = ('阵亡后结束 / 无结算' if event and event['death_clock'] is not None and not event['has_afterbattle']
-                       else '已记录结算' if b['result']!='unknown' else '未确定')
+                       else '已记录结算' if b['result']!='unknown'
+                       else '假设提前离场 / 无战报' if b['result_status']=='no_result_block' else '未确定')
         def count_high(team):
             if not team or any(not p.get('rank_raw') or p.get('qualification') for p in team):
                 return '未知 / 含定级'

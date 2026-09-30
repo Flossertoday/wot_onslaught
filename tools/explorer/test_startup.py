@@ -60,6 +60,7 @@ class StartupTests(unittest.TestCase):
         changed = next(r for r in data['records'] if r['id']=='changed')
         self.assertIsNone(changed['investigation'])
         self.assertEqual(changed['tags']['observed_death'], '未调查')
+        self.assertEqual(changed['tags']['recording_end'], '假设提前离场 / 无战报')
         self.assertTrue(any(r['investigation'] for r in data['records']))
 
 
