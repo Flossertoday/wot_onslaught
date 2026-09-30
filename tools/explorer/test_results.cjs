@@ -93,19 +93,18 @@ context.document={getElementById:id=>{
   if(!nodes.has(id))nodes.set(id,{innerHTML:'',classList:{toggle(){}}});
   return nodes.get(id);
 }};
-for(const metric of ['rating','prestige']){
+for(const metric of ['rating','prestige','win']){
   vm.runInContext(`state.metric='${metric}'`,context);
   context.renderGroupTable([performance,{...empty,key:'["未知"]'}],performance);
   const headers=nodes.get('group-head').innerHTML;
-  assert.ok(headers.endsWith('<th >平均声望</th><th >平均输出</th>'));
-  assert.ok(!headers.includes('相对其余均值差')&&!headers.includes('缺失'));
+  assert.ok(headers.includes('<th >平均声望</th><th >平均输出</th>'));
+  assert.ok(!headers.includes('相对其余')&&!headers.includes('缺失')&&!headers.includes('>未知<'));
   const html=nodes.get('groups').innerHTML;
   assert.ok(html.includes('本人声望；有值 3 / 5 场">200</td>'));
   assert.ok(html.includes('本人造成的伤害；有值 3 / 5 场">1,500</td>'));
   assert.ok(html.includes('本人造成的伤害；有值 0 / 1 场">—</td>'));
+  assert.equal((headers.match(/<th /g)||[]).length,8);
+  assert.equal((html.match(/<td[ >]/g)||[]).length,16);
+  if(metric==='win')assert.ok(headers.includes('class="bounds-col">含未知的上下界'));
 }
-vm.runInContext("state.metric='win'",context);
-context.renderGroupTable([performance],performance);
-assert.ok(nodes.get('group-head').innerHTML.includes('相对其余胜率差'));
-assert.ok(!nodes.get('group-head').innerHTML.includes('平均输出'));
 console.log('Result views: distributions, outcome means, excluded-group baselines, missing-last sorting and saved-view migration passed.');
