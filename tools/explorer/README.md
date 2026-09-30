@@ -17,7 +17,8 @@ python tools/explorer/server.py --open-browser
 启动提取器需要现有 Python 环境中的 scipy 和本机游戏资源；前端无 npm 安装、外部 CDN 或网络依赖。
 
 同步仅复制源目录顶层的 `.wotreplay`，按文件头 `gameplayID=comp7`、`battleType=43` 筛选，
-存入当前工作树的 `replays/<地图>/`。已有同名同内容文件跳过；同名不同内容报告冲突，
+存入当前工作树的 `replays/<地图>/`。非天梯录像不复制，提示中的“已跳过非天梯”是排除数量。
+已有同名同内容文件跳过；同名不同内容报告冲突，
 不覆盖。源录像不删除、不修改，`ReplayCache.db` 不同步。临时录像 `temp.wotreplay`、
 最后修改不足 10 秒或复制过程中变化的文件留待下次启动；这不是常驻目录监控。
 

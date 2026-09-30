@@ -159,7 +159,7 @@ def load_startup_data(source=DEFAULT_SOURCE, game=DEFAULT_SOURCE.parent):
     if source is not None:
         report = sync_replays(source, ROOT/'replays')
         messages.append(f"录像同步：新增 {report['copied']}，已有 {report['existing']}，"
-                        f"普通模式 {report['ignored']}，待完成 {report['pending']}，"
+                        f"已跳过非天梯 {report['ignored']}，待完成 {report['pending']}，"
                         f"冲突 {len(report['conflicts'])}，错误 {len(report['errors'])}。")
         print(json.dumps(report, ensure_ascii=True), flush=True)
         if report['conflicts'] or report['errors']:

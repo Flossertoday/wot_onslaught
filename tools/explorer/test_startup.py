@@ -37,6 +37,19 @@ class StartupTests(unittest.TestCase):
         self.assertEqual(len(data['records']), 431)
         self.assertEqual(len(list((self.root/'.drafts/explorer').iterdir())), 0)
 
+    def test_sync_message_marks_non_onslaught_as_skipped(self):
+        report = dict(copied=69, existing=431, ignored=81, pending=1, conflicts=[], errors=[])
+        data = dict(metadata={}, records=[{}] * 500)
+        with patch.object(server, 'ROOT', self.root), \
+                patch.object(server, 'sync_replays', return_value=report), \
+                patch.object(server.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, '', '')), \
+                patch.object(server, 'build_data', return_value=data), \
+                contextlib.redirect_stdout(io.StringIO()):
+            result = server.load_startup_data()
+        message = result['metadata']['startup_message']
+        self.assertIn('新增 69，已有 431，已跳过非天梯 81', message)
+        self.assertIn('共 500 场录像', message)
+
     def test_failure_keeps_historical_data_and_visible_warning(self):
         with patch.object(server, 'ROOT', self.root), patch.object(server.subprocess, 'run', side_effect=OSError('missing Python')), contextlib.redirect_stdout(io.StringIO()):
             data = server.load_startup_data(source=self.root/'missing')
