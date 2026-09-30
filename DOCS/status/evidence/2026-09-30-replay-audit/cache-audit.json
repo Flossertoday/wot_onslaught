@@ -1,0 +1,568 @@
+{
+  "source": "APPDATA/Wargaming.net/WorldOfTanks/battle_results",
+  "files": 55,
+  "matching_valid_replays": 50,
+  "unmatched": 5,
+  "unmatched_bonus_types": {
+    "1": 5
+  },
+  "field_indices_validated_against_all_matches": {
+    "arenaCreateTime": 2,
+    "bonusType": 7,
+    "winnerTeam": 3,
+    "duration": 6
+  },
+  "records": [
+    {
+      "arena_id": "2378489247490062888",
+      "sha256": "dda80a47d1e36e2ff6dfa5cd15f76549c1a913a8a9ba9023e04984f5d3ff2c74",
+      "bytes": 9558,
+      "matching_replay": "128-last_frontier_v_comp7_nb/20260929_1210_ussr-R88_Object268_Onslaught_128_last_frontier_v_comp7_nb.wotreplay",
+      "arenaCreateTime": 1790655016,
+      "bonusType": 43,
+      "winnerTeam": 2,
+      "duration": 317
+    },
+    {
+      "arena_id": "2381764091333805432",
+      "sha256": "231701a5cecb7d59b97e66238d9dd8fb804e6b5a4d007107a031e915f73b0d05",
+      "bytes": 9964,
+      "matching_replay": "04-himmelsdorf/20260929_1731_ussr-R148_Object_430_U_Onslaught_04_himmelsdorf.wotreplay",
+      "arenaCreateTime": 1790674296,
+      "bonusType": 43,
+      "winnerTeam": 2,
+      "duration": 325
+    },
+    {
+      "arena_id": "2383908401000957977",
+      "sha256": "463fb04cb91312ff66b3ef7a3d7216abcb8af316361537d3c5dd5991b13cb9c1",
+      "bytes": 9678,
+      "matching_replay": "44-north_america/20260929_1309_ussr-R88_Object268_Onslaught_44_north_america.wotreplay",
+      "arenaCreateTime": 1790658585,
+      "bonusType": 43,
+      "winnerTeam": 1,
+      "duration": 250
+    },
+    {
+      "arena_id": "2383909719555920406",
+      "sha256": "28046aa07b1c5a993d7b8e55e2b21b3adf675b360aa139bc2aeaca5d34da8e50",
+      "bytes": 9734,
+      "matching_replay": "95-lost_city_ctf/20260929_1352_poland-Pl21_CS_63_Onslaught_95_lost_city_ctf.wotreplay",
+      "arenaCreateTime": 1790661142,
+      "bonusType": 43,
+      "winnerTeam": 2,
+      "duration": 414
+    },
+    {
+      "arena_id": "2386169555253433450",
+      "sha256": "3642bcda8b3d036c2161cba42f6a5935ee14cbce28092160a02417aca0b6c1d2",
+      "bytes": 10232,
+      "matching_replay": "14-siegfried_line/20260929_1835_ussr-R88_Object268_Onslaught_14_siegfried_line.wotreplay",
+      "arenaCreateTime": 1790678122,
+      "bonusType": 43,
+      "winnerTeam": 2,
+      "duration": 220
+    },
+    {
+      "arena_id": "2386169958980350875",
+      "sha256": "096738f45159b281d7680c45450d4f54545be2fe011f955c94dd989bfde34053",
+      "bytes": 10155,
+      "matching_replay": "44-north_america/20260929_1615_ussr-R88_Object268_Onslaught_44_north_america.wotreplay",
+      "arenaCreateTime": 1790669723,
+      "bonusType": 43,
+      "winnerTeam": 2,
+      "duration": 346
+    },
+    {
+      "arena_id": "2386170186613623018",
+      "sha256": "a0dfb8e35c02df255c01aa90822789f1c08270a70d41b62daf2a38bad3859673",
+      "bytes": 9419,
+      "matching_replay": "08-ruinberg/20260929_1746_ussr-R148_Object_430_U_Onslaught_08_ruinberg.wotreplay",
+      "arenaCreateTime": 1790675178,
+      "bonusType": 43,
+      "winnerTeam": 2,
+      "duration": 212
+    },
+    {
+      "arena_id": "2386170538800928874",
+      "sha256": "3a98783f3f1fb0acb508d632c4aac808de1c636960db9dccca278a42bc998e4d",
+      "bytes": 9177,
+      "matching_replay": "04-himmelsdorf/20260929_1419_ussr-R148_Object_430_U_Onslaught_04_himmelsdorf.wotreplay",
+      "arenaCreateTime": 1790662762,
+      "bonusType": 43,
+      "winnerTeam": 1,
+      "duration": 179
+    },
+    {
+      "arena_id": "2386170693419774812",
+      "sha256": "f9e4b90643a5c1e04e7a0159653eac0684027268322effb03ad38d06d1c399c1",
+      "bytes": 5705,
+      "matching_replay": null,
+      "arenaCreateTime": 1790686044,
+      "bonusType": 1,
+      "winnerTeam": 2,
+      "duration": 730
+    },
+    {
+      "arena_id": "2387993834022467508",
+      "sha256": "d630f648afb4b028b234e8377534e0c14808e84fdc1148c542eb15691a34029f",
+      "bytes": 10086,
+      "matching_replay": "31-airfield/20260929_1633_ussr-R88_Object268_Onslaught_31_airfield.wotreplay",
+      "arenaCreateTime": 1790670772,
+      "bonusType": 43,
+      "winnerTeam": 2,
+      "duration": 221
+    },
+    {
+      "arena_id": "2387993834022472657",
+      "sha256": "80860d20995a9d98b4166cee6280af60511c7b537b764c2dd0757ae5538f94ea",
+      "bytes": 9529,
+      "matching_replay": "31-airfield/20260929_1758_ussr-R88_Object268_Onslaught_31_airfield.wotreplay",
+      "arenaCreateTime": 1790675921,
+      "bonusType": 43,
+      "winnerTeam": 1,
+      "duration": 237
+    },
+    {
+      "arena_id": "2387993855497297895",
+      "sha256": "18c705695c3cbbaa398ed83a9b5d9583a3cb659b320197f6224a1c9d0f75bf82",
+      "bytes": 9537,
+      "matching_replay": "11-murovanka/20260929_1451_france-F10_AMX_50B_Onslaught_11_murovanka.wotreplay",
+      "arenaCreateTime": 1790664679,
+      "bonusType": 43,
+      "winnerTeam": 1,
+      "duration": 226
+    },
+    {
+      "arena_id": "2387993945691613012",
+      "sha256": "6a032a849211208aa8153784b47cce5f731aadc4262905f8f5f2943a192d04b0",
+      "bytes": 9455,
+      "matching_replay": "127-japort/20260929_1523_china-Ch29_Type_62C_prot_Onslaught_127_japort.wotreplay",
+      "arenaCreateTime": 1790666580,
+      "bonusType": 43,
+      "winnerTeam": 1,
+      "duration": 269
+    },
+    {
+      "arena_id": "2387994023001018589",
+      "sha256": "54c5e009a1c118537678eabbe04a3bf86088d21e016769ed7a98198fa8c2bc17",
+      "bytes": 9285,
+      "matching_replay": "115-sweden_comp7_nb/20260929_1347_ussr-R88_Object268_Onslaught_115_sweden_comp7_nb.wotreplay",
+      "arenaCreateTime": 1790660829,
+      "bonusType": 43,
+      "winnerTeam": 2,
+      "duration": 215
+    },
+    {
+      "arena_id": "2387994074540625748",
+      "sha256": "5ff3a1e1846e63a6192bff0af945559eae8176ab22a357e46d4328586c85b0fb",
+      "bytes": 7626,
+      "matching_replay": "11-murovanka/20260929_1340_germany-G125_Spz_57_Rh_Onslaught_11_murovanka.wotreplay",
+      "arenaCreateTime": 1790660436,
+      "bonusType": 43,
+      "winnerTeam": 1,
+      "duration": 218
+    },
+    {
+      "arena_id": "2387994207684616521",
+      "sha256": "c5cfc39719e880f656008b3ec4b140bf02e63f66c6be6f716c7ee4a178975d09",
+      "bytes": 9417,
+      "matching_replay": "14-siegfried_line/20260929_1457_ussr-R88_Object268_Onslaught_14_siegfried_line.wotreplay",
+      "arenaCreateTime": 1790665033,
+      "bonusType": 43,
+      "winnerTeam": 2,
+      "duration": 226
+    },
+    {
+      "arena_id": "2387994242044362105",
+      "sha256": "ee9dcfd0fb687cf58ca97466a2c0b9df0e5939cbb082c9f281e7b6df0094b8f3",
+      "bytes": 9558,
+      "matching_replay": "04-himmelsdorf/20260929_1657_ussr-R88_Object268_Onslaught_04_himmelsdorf.wotreplay",
+      "arenaCreateTime": 1790672249,
+      "bonusType": 43,
+      "winnerTeam": 1,
+      "duration": 220
+    },
+    {
+      "arena_id": "2387994980778727204",
+      "sha256": "780eda9af79a7c24a393031557357aaadb5032cfa7dbefe5456fbfd8fc11d37b",
+      "bytes": 9609,
+      "matching_replay": "08-ruinberg/20260929_1414_france-F10_AMX_50B_Onslaught_08_ruinberg.wotreplay",
+      "arenaCreateTime": 1790662436,
+      "bonusType": 43,
+      "winnerTeam": 2,
+      "duration": 172
+    },
+    {
+      "arena_id": "2387994993663634328",
+      "sha256": "87e2771fdb5f04e2b91f8b5cc1bf68a6c91ec4a5c9532c2211e6e404a1874629",
+      "bytes": 9030,
+      "matching_replay": "14-siegfried_line/20260929_1541_germany-G125_Spz_57_Rh_Onslaught_14_siegfried_line.wotreplay",
+      "arenaCreateTime": 1790667672,
+      "bonusType": 43,
+      "winnerTeam": 1,
+      "duration": 211
+    },
+    {
+      "arena_id": "2387995040908273896",
+      "sha256": "7a67e7315ab0d347850ab44fcae0c0ef7270e4ca0a89b3700123f1955eba27a5",
+      "bytes": 9210,
+      "matching_replay": "114-czech/20260929_1529_germany-G125_Spz_57_Rh_Onslaught_114_czech.wotreplay",
+      "arenaCreateTime": 1790666984,
+      "bonusType": 43,
+      "winnerTeam": 1,
+      "duration": 303
+    },
+    {
+      "arena_id": "2387995113922722739",
+      "sha256": "575e1aadf0ae5e182f081e500bd6f34b52032dad17d214faacaf071aa8002290",
+      "bytes": 9116,
+      "matching_replay": "99-poland/20260929_1650_ussr-R88_Object268_Onslaught_99_poland.wotreplay",
+      "arenaCreateTime": 1790671795,
+      "bonusType": 43,
+      "winnerTeam": 1,
+      "duration": 327
+    },
+    {
+      "arena_id": "2387995290016386337",
+      "sha256": "c981b260a678cf817cd1f58a866f540e6866dd52df65445779d8bac8b90e7251",
+      "bytes": 9767,
+      "matching_replay": "11-murovanka/20260929_1804_poland-Pl21_CS_63_Onslaught_11_murovanka.wotreplay",
+      "arenaCreateTime": 1790676257,
+      "bonusType": 43,
+      "winnerTeam": 1,
+      "duration": 324
+    },
+    {
+      "arena_id": "2389978740273409855",
+      "sha256": "23d7913f47e6dc84af8b563bfcde3370221f584c327cfbe9540577f851981c11",
+      "bytes": 9379,
+      "matching_replay": "95-lost_city_ctf/20260929_1556_ussr-R88_Object268_Onslaught_95_lost_city_ctf.wotreplay",
+      "arenaCreateTime": 1790668607,
+      "bonusType": 43,
+      "winnerTeam": 1,
+      "duration": 197
+    },
+    {
+      "arena_id": "2389979375928571240",
+      "sha256": "322dbe0b33626c4869c3a3cf46a7ca353a1dda90c6c53f12ad402bd014c69294",
+      "bytes": 9002,
+      "matching_replay": "18-cliff/20260929_1623_ussr-R88_Object268_Onslaught_18_cliff.wotreplay",
+      "arenaCreateTime": 1790670184,
+      "bonusType": 43,
+      "winnerTeam": 2,
+      "duration": 207
+    },
+    {
+      "arena_id": "2389979582087014864",
+      "sha256": "d03329b55e3f50d47ba08b7a5a3d9aecab3e596368dd33ff41f13c6cef29b430",
+      "bytes": 5584,
+      "matching_replay": null,
+      "arenaCreateTime": 1790683600,
+      "bonusType": 1,
+      "winnerTeam": 2,
+      "duration": 361
+    },
+    {
+      "arena_id": "2392830134701494592",
+      "sha256": "50b700517af064deba435f3b62787d8a7dd55c845aa379839fdfc1e01e733adc",
+      "bytes": 9695,
+      "matching_replay": "29-el_hallouf/20260929_1822_ussr-R88_Object268_Onslaught_29_el_hallouf.wotreplay",
+      "arenaCreateTime": 1790677312,
+      "bonusType": 43,
+      "winnerTeam": 2,
+      "duration": 232
+    },
+    {
+      "arena_id": "2392830340859923090",
+      "sha256": "0c2004d5f37ddeddcd65fc5767010f7c132891dfede38ef083735c955a059f6b",
+      "bytes": 9131,
+      "matching_replay": "35-steppes_comp7_nb/20260929_1753_japan-J40_Type_71_Onslaught_35_steppes_comp7_nb.wotreplay",
+      "arenaCreateTime": 1790675602,
+      "bonusType": 43,
+      "winnerTeam": 1,
+      "duration": 214
+    },
+    {
+      "arena_id": "76599437844765486",
+      "sha256": "a77593409a9e218b8fb5e2bc336a9339db8803e376536760e3a3ac718e32640f",
+      "bytes": 9171,
+      "matching_replay": "99-poland/20260929_1431_japan-J20_Type_2605_Onslaught_99_poland.wotreplay",
+      "arenaCreateTime": 1790663470,
+      "bonusType": 43,
+      "winnerTeam": 2,
+      "duration": 243
+    },
+    {
+      "arena_id": "76599502269280918",
+      "sha256": "3a82b2030d1cb8423e4ddfef24b9d29323b278bc0776cd115d4b53d433d22774",
+      "bytes": 9815,
+      "matching_replay": "23-westfeld/20260929_1611_ussr-R88_Object268_Onslaught_23_westfeld.wotreplay",
+      "arenaCreateTime": 1790669462,
+      "bonusType": 43,
+      "winnerTeam": 2,
+      "duration": 161
+    },
+    {
+      "arena_id": "76599532334040852",
+      "sha256": "e9886afd05e0f0832e06fa9e1a2b65546592ebfb43d6b66a751eda5180927796",
+      "bytes": 8893,
+      "matching_replay": "08-ruinberg/20260929_1305_ussr-R148_Object_430_U_Onslaught_08_ruinberg.wotreplay",
+      "arenaCreateTime": 1790658324,
+      "bonusType": 43,
+      "winnerTeam": 2,
+      "duration": 130
+    },
+    {
+      "arena_id": "78881972444432427",
+      "sha256": "89f76e996aed4f2f21888f81f62da00989fa8b43f96ba50144b7aa6252b67bfb",
+      "bytes": 8593,
+      "matching_replay": "99-poland/20260929_1743_germany-G121_Grille_15_L63_Onslaught_99_poland.wotreplay",
+      "arenaCreateTime": 1790674987,
+      "bonusType": 43,
+      "winnerTeam": 1,
+      "duration": 85
+    },
+    {
+      "arena_id": "78882131358206946",
+      "sha256": "d652d32a7a1faa039d5bf3f61fe4398192c3162dd6f496bfadf671c73129de3c",
+      "bytes": 9203,
+      "matching_replay": "31-airfield/20260929_1326_ussr-R88_Object268_Onslaught_31_airfield.wotreplay",
+      "arenaCreateTime": 1790659554,
+      "bonusType": 43,
+      "winnerTeam": 1,
+      "duration": 209
+    },
+    {
+      "arena_id": "78882603804608903",
+      "sha256": "c9ac5c3477607158ec51855cd8c03a3dfa0b0db457256e40c4baf8040f1927f9",
+      "bytes": 8906,
+      "matching_replay": "14-siegfried_line/20260929_1316_usa-A83_T110E4_Onslaught_14_siegfried_line.wotreplay",
+      "arenaCreateTime": 1790658951,
+      "bonusType": 43,
+      "winnerTeam": 1,
+      "duration": 164
+    },
+    {
+      "arena_id": "81496297562650869",
+      "sha256": "5f43349f4a7384ba23f464b8e7b1c768e92f25395f15d643f71ca65ec7c5013d",
+      "bytes": 8971,
+      "matching_replay": "05-prohorovka/20260929_1205_ussr-R88_Object268_Onslaught_05_prohorovka.wotreplay",
+      "arenaCreateTime": 1790654709,
+      "bonusType": 43,
+      "winnerTeam": 2,
+      "duration": 162
+    },
+    {
+      "arena_id": "81496718469455038",
+      "sha256": "f03a5d3c9f8aeb6c9cf80345ed01cc7aa34c28a7bcf92a45d5afeb5d60bb6501",
+      "bytes": 9996,
+      "matching_replay": "44-north_america/20260929_1438_france-F10_AMX_50B_Onslaught_44_north_america.wotreplay",
+      "arenaCreateTime": 1790663870,
+      "bonusType": 43,
+      "winnerTeam": 1,
+      "duration": 451
+    },
+    {
+      "arena_id": "81496808663763612",
+      "sha256": "02e9efbf54832a32d65921592567913b784907e966cf5c5ccc1e2860a2199482",
+      "bytes": 9907,
+      "matching_replay": "99-poland/20260929_1320_ussr-R88_Object268_Onslaught_99_poland.wotreplay",
+      "arenaCreateTime": 1790659228,
+      "bonusType": 43,
+      "winnerTeam": 1,
+      "duration": 186
+    },
+    {
+      "arena_id": "81496937512784952",
+      "sha256": "564e65b1f6712dab8c93370fc4761efe3ba30658dfbceb3ebdc847338c9cc133",
+      "bytes": 10214,
+      "matching_replay": "28-desert_comp7_nb/20260929_1401_ussr-R148_Object_430_U_Onslaught_28_desert_comp7_nb.wotreplay",
+      "arenaCreateTime": 1790661688,
+      "bonusType": 43,
+      "winnerTeam": 2,
+      "duration": 235
+    },
+    {
+      "arena_id": "81496941807753615",
+      "sha256": "186e34be8aa9d7a8d75cbbb8c91bd40a7bff2999533573148b0c8de349c7bdb4",
+      "bytes": 10769,
+      "matching_replay": "95-lost_city_ctf/20260929_1424_poland-Pl21_CS_63_Onslaught_95_lost_city_ctf.wotreplay",
+      "arenaCreateTime": 1790663055,
+      "bonusType": 43,
+      "winnerTeam": 2,
+      "duration": 270
+    },
+    {
+      "arena_id": "81497010527227190",
+      "sha256": "a47eb45563fd5ff63723db2b1362d681549702aaa09d4911d9cd78dfc7eb0c2e",
+      "bytes": 8674,
+      "matching_replay": "04-himmelsdorf/20260929_1331_ussr-R148_Object_430_U_Onslaught_04_himmelsdorf.wotreplay",
+      "arenaCreateTime": 1790659894,
+      "bonusType": 43,
+      "winnerTeam": 2,
+      "duration": 246
+    },
+    {
+      "arena_id": "81497083541684386",
+      "sha256": "c3292e0f737227fb0dc270d7213e8250d6d102de5b42748407e9877bceb1e6e5",
+      "bytes": 9151,
+      "matching_replay": "29-el_hallouf/20260929_1711_germany-G121_Grille_15_L63_Onslaught_29_el_hallouf.wotreplay",
+      "arenaCreateTime": 1790673058,
+      "bonusType": 43,
+      "winnerTeam": 1,
+      "duration": 186
+    },
+    {
+      "arena_id": "81497577462927328",
+      "sha256": "4e0a2215e14632eb64413e5e207599a820b3f201bc3bcc33648fff19082f281f",
+      "bytes": 10635,
+      "matching_replay": "99-poland/20260929_1816_germany-G89_Leopard1_Onslaught_99_poland.wotreplay",
+      "arenaCreateTime": 1790676960,
+      "bonusType": 43,
+      "winnerTeam": 1,
+      "duration": 204
+    },
+    {
+      "arena_id": "81497620412592506",
+      "sha256": "07302ec28236aba9b632b85d9e831c8a9d3f8f590adec6a26e181ec324d72202",
+      "bytes": 9027,
+      "matching_replay": "10-hills/20260929_1606_ussr-R88_Object268_Onslaught_10_hills.wotreplay",
+      "arenaCreateTime": 1790669178,
+      "bonusType": 43,
+      "winnerTeam": 1,
+      "duration": 178
+    },
+    {
+      "arena_id": "81497710606907034",
+      "sha256": "fa18479e711aeb5c1ab424d74b77be6922d004b0ff67d3e85e809c99da6ad449",
+      "bytes": 8897,
+      "matching_replay": "121-lost_paradise_v/20260929_1628_china-Ch48_BZ_75_Onslaught_121_lost_paradise_v.wotreplay",
+      "arenaCreateTime": 1790670490,
+      "bonusType": 43,
+      "winnerTeam": 2,
+      "duration": 170
+    },
+    {
+      "arena_id": "81497835160956118",
+      "sha256": "0fb843e8b00c27eaa77589297a0b7c4a8514905e617307f8b97e6e66b13d6af3",
+      "bytes": 8823,
+      "matching_replay": "31-airfield/20260929_1546_germany-G125_Spz_57_Rh_Onslaught_31_airfield.wotreplay",
+      "arenaCreateTime": 1790667990,
+      "bonusType": 43,
+      "winnerTeam": 1,
+      "duration": 221
+    },
+    {
+      "arena_id": "83597524412889577",
+      "sha256": "4015eb80eb0eb631c33866cc073aa9894caf095cd70fb2ac786e0f86eef5e19c",
+      "bytes": 10352,
+      "matching_replay": "63-tundra/20260929_1642_ussr-R88_Object268_Onslaught_63_tundra.wotreplay",
+      "arenaCreateTime": 1790671337,
+      "bonusType": 43,
+      "winnerTeam": 2,
+      "duration": 344
+    },
+    {
+      "arena_id": "83597868010263975",
+      "sha256": "cb7f313f296b701dda643e89f1ece2080685f0692010be85679e96c9fdf2dc0b",
+      "bytes": 11200,
+      "matching_replay": "29-el_hallouf/20260929_1407_ussr-R88_Object268_Onslaught_29_el_hallouf.wotreplay",
+      "arenaCreateTime": 1790662055,
+      "bonusType": 43,
+      "winnerTeam": 1,
+      "duration": 240
+    },
+    {
+      "arena_id": "83597983974391504",
+      "sha256": "64627b6b436be27b424e68506f30d3f3b4f51b1e8229255212fb029156eb2705",
+      "bytes": 8964,
+      "matching_replay": "08-ruinberg/20260929_1703_ussr-R88_Object268_Onslaught_08_ruinberg.wotreplay",
+      "arenaCreateTime": 1790672592,
+      "bonusType": 43,
+      "winnerTeam": 1,
+      "duration": 196
+    },
+    {
+      "arena_id": "83598065578765844",
+      "sha256": "72d7a546a662a95c3c7c30a5f5dce138a77bae2fff9126db1a1a208ec455d82e",
+      "bytes": 8646,
+      "matching_replay": "128-last_frontier_v_comp7_nb/20260929_1551_ussr-R88_Object268_Onslaught_128_last_frontier_v_comp7_nb.wotreplay",
+      "arenaCreateTime": 1790668308,
+      "bonusType": 43,
+      "winnerTeam": 1,
+      "duration": 180
+    },
+    {
+      "arena_id": "83598357636539953",
+      "sha256": "b8fe38ac68049fa574cc6246938425fc1693f1700b7db78a3fc1f0522f0363f7",
+      "bytes": 9862,
+      "matching_replay": "04-himmelsdorf/20260929_1518_china-Ch29_Type_62C_prot_Onslaught_04_himmelsdorf.wotreplay",
+      "arenaCreateTime": 1790666289,
+      "bonusType": 43,
+      "winnerTeam": 1,
+      "duration": 174
+    },
+    {
+      "arena_id": "86954818743796767",
+      "sha256": "e54ccbe8e9584814a6570fdef6f180a351faa3dd5b9a518323bece3d3d9b643c",
+      "bytes": 9099,
+      "matching_replay": "127-japort/20260929_1726_poland-Pl21_CS_63_Onslaught_127_japort.wotreplay",
+      "arenaCreateTime": 1790673951,
+      "bonusType": 43,
+      "winnerTeam": 2,
+      "duration": 241
+    },
+    {
+      "arena_id": "86954835923676073",
+      "sha256": "b61b7184c4bf18d62bee6c245934b04a4f0aa70be50e23d5e625c9e79ce4db02",
+      "bytes": 5917,
+      "matching_replay": null,
+      "arenaCreateTime": 1790684073,
+      "bonusType": 1,
+      "winnerTeam": 1,
+      "duration": 502
+    },
+    {
+      "arena_id": "86954960477716982",
+      "sha256": "cc1df9d4a9c9065adffb344b343b24c1ba823d7fef1cea59018e318c32a98207",
+      "bytes": 9465,
+      "matching_replay": "28-desert_comp7_nb/20260929_1716_germany-G121_Grille_15_L63_Onslaught_28_desert_comp7_nb.wotreplay",
+      "arenaCreateTime": 1790673398,
+      "bonusType": 43,
+      "winnerTeam": 2,
+      "duration": 240
+    },
+    {
+      "arena_id": "86955222470719742",
+      "sha256": "14be72480d9e640938ad3fa6f172465f53fb9e9b967727b3747ed57f9d236a18",
+      "bytes": 10803,
+      "matching_replay": "05-prohorovka/20260929_1638_ussr-R88_Object268_Onslaught_05_prohorovka.wotreplay",
+      "arenaCreateTime": 1790671102,
+      "bonusType": 43,
+      "winnerTeam": 1,
+      "duration": 129
+    },
+    {
+      "arena_id": "90483181622110160",
+      "sha256": "91516828e8814f76d3d7da6e25d4501764d5222cfe2ec0d74420251da4bd4040",
+      "bytes": 5677,
+      "matching_replay": null,
+      "arenaCreateTime": 1790683088,
+      "bonusType": 1,
+      "winnerTeam": 1,
+      "duration": 279
+    },
+    {
+      "arena_id": "90483765737664818",
+      "sha256": "7a0e236cd3d55fa94fd3abc7db5f1c9b892354987bb2b42a0b801c7bd02ce83a",
+      "bytes": 5841,
+      "matching_replay": null,
+      "arenaCreateTime": 1790685490,
+      "bonusType": 1,
+      "winnerTeam": 2,
+      "duration": 397
+    }
+  ],
+  "caveat": "This is a local cache snapshot, not an inventory of every battle ever played."
+}
