@@ -15,9 +15,9 @@
 | 自己的车辆 | 头部 `playerVehicle` 与第二 JSON 块的最终车辆表交叉检查；车辆表按结果 `vehicles[*][*].accountDBID` 关联本人；文件名仅辅助 |
 | 车辆类别 | 当前客户端 `scripts.pkg/scripts/item_defs/vehicles/<nation>/list.xml` 的 `tags`；不按名称猜测 |
 | 队伍 | 有战报时按 accountDBID 关联本人并交叉检查 players、personal.avatar、vehicles 的 team；只有头部时用唯一匹配的玩家名找到 header.team，并明确来源 |
-| 出生方 | 使用当前地图 `gameplayTypes/comp7/teamSpawnPoints/team1|team2`，保存队伍编号及配置坐标；不把普通模式出生点用于猛攻，也不将配置坐标冒充实际出生轨迹。当前先用 team1/team2，南北名称需单独核验 |
+| 出生方 | 使用当前地图 `gameplayTypes/comp7/teamSpawnPoints/team1|team2`，保存队伍编号及配置坐标；不把普通模式出生点用于天梯，也不将配置坐标冒充实际出生轨迹。当前先用 team1/team2，南北名称需单独核验 |
 | 胜负 | `common.winnerTeam` 与本人 team 比较；0 为平局，1/2 为获胜队。身份、队伍、车辆、时间不一致则隔离。缺失不算负场 |
-| 表现 | 结果车辆条目中的伤害、协助、击杀、生存时间、血量、格挡、占点、技能次数、猛攻声望等；保留原始指标，不定义统一的好/差阈值 |
+| 表现 | 结果车辆条目中的伤害、协助、击杀、生存时间、血量、格挡、占点、技能次数、天梯声望等；保留原始指标，不定义统一的好/差阈值 |
 | 分段 | `avatars[accountDBID].comp7Rank` 为 `(rank, divisionIndex, serialIndex)`；第三项不是积分。前两项通过该录像自身 `serverSettings.comp7_ranks_config.divisions` 映射 |
 | 定级赛 | `comp7QualActive` 为真时，分段范围不作为已定级实力标签；单独标记 qualification |
 | 本人积分 | `personal.avatar.comp7Rating` 是战前积分；战后值为 `max(0, comp7Rating + comp7RatingDelta)`。当前客户端战报 UI 的 prevRating/currentRating 代码直接证明 |
@@ -32,7 +32,7 @@
 ## 已确认的陷阱
 
 - 头部部分 `vehicles[*].vehicleType` 为空，`position=[-32768,-32768]` 为占位值。
-- `ranked`、`prestigeLevel` 等名称相近字段不能替代猛攻 `comp7Rank`。
+- `ranked`、`prestigeLevel` 等名称相近字段不能替代天梯 `comp7Rank`。
 - 完整战报的精确积分在客户端定义中为 ACCOUNT_SELF；分段为 ACCOUNT_ALL。
 - ReplayCache.db 是辅助缓存。此次虽能按 basename 和文件大小匹配全部录像，
   但没有 JSON 战报的 91 场在缓存中也全部为 `iIsWinner=-1`，无法补齐。

@@ -27,14 +27,19 @@ function stats(rows){
   const known=wins+losses+draws,total=rows.length,unknown=total-known,p=known?wins/known:null,z=1.959963984540054;
   let low=null,high=null;
   if(known){const denom=1+z*z/known,center=(p+z*z/(2*known))/denom,radius=z*Math.sqrt(p*(1-p)/known+z*z/(4*known*known))/denom;low=Math.max(0,center-radius);high=Math.min(1,center+radius);}
-  return {wins,losses,draws,known,total,unknown,p,low,high,boundLow:total?wins/total:null,boundHigh:total?(wins+unknown)/total:null};
+  // User scenario: apply 30% only to the 78 investigated early-ended unknowns.
+  const eligible=rows.filter(r=>r.result==='unknown'&&r.investigation?.death_clock!=null&&!r.investigation.has_afterbattle).length;
+  const unassigned=unknown-eligible,expectedWins=wins+.3*eligible;
+  const estimate=total&&unassigned===0?expectedWins/total:null;
+  return {wins,losses,draws,known,total,unknown,p,low,high,eligible,unassigned,expectedWins,estimate,boundLow:total?wins/total:null,boundHigh:total?(wins+unknown)/total:null};
 }
 function render(){
   const rows=filtered(),all=stats(rows),groups=new Map();
   for(const r of rows){const key=JSON.stringify(state.dims.map(d=>r.tags[d]));if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);}
   let list=[...groups.entries()].map(([key,rows])=>({key,rows,...stats(rows)})).filter(g=>g.known>=state.min);
-  list.sort((a,b)=>state.sort==='total'?b.total-a.total:state.sort==='unknown'?(b.unknown/b.total)-(a.unknown/a.total):state.sort==='name'?a.key.localeCompare(b.key,'zh-CN'):(a.p??Infinity)-(b.p??Infinity)||b.known-a.known);
-  $('kpis').innerHTML=[['当前对局',number(all.total),'按日期和标签筛选'],['已知胜率',pct(all.p),`${all.wins} 胜 · ${all.losses} 负 · ${all.draws} 平`],['结果未知',number(all.unknown),`${pct(all.total?all.unknown/all.total:null)} 的当前样本`],['含未知的范围',`${pct(all.boundLow)}–${pct(all.boundHigh)}`,'未知全负 → 未知全胜'],['分组数量',number(list.length),`共 ${groups.size} 组，按已知场数显示`]].map(([l,v,h])=>`<div class="kpi"><small>${l}</small><strong ${l==='含未知的范围'?'style="font-size:20px"':''}>${v}</strong><span>${h}</span></div>`).join('');
+  list.sort((a,b)=>state.sort==='total'?b.total-a.total:state.sort==='unknown'?(b.unknown/b.total)-(a.unknown/a.total):state.sort==='name'?a.key.localeCompare(b.key,'zh-CN'):state.sort==='estimated'?(a.estimate??Infinity)-(b.estimate??Infinity):(a.p??Infinity)-(b.p??Infinity)||b.known-a.known);
+  $('kpis').innerHTML=[['当前对局',number(all.total),'按日期和标签筛选'],['估计胜率 · 30% 情景',pct(all.estimate),all.unassigned?'含未纳入估计的未知场':`${all.wins} + ${all.eligible} × 30% 预计胜场`],['已知胜率',pct(all.p),`${all.wins} 胜 · ${all.losses} 负 · ${all.draws} 平`],['结果未知',number(all.unknown),`${pct(all.total?all.unknown/all.total:null)} 的当前样本`],['含未知的范围',`${pct(all.boundLow)}–${pct(all.boundHigh)}`,'未知全负 → 未知全胜'],['分组数量',number(list.length),`共 ${groups.size} 组，按已知场数显示`]].map(([l,v,h])=>`<div class="kpi"><small>${l}</small><strong ${l==='含未知的范围'?'style="font-size:20px"':''}>${v}</strong><span>${h}</span></div>`).join('');
+  $('scenario-note').textContent='按你的估计：78 场提前结束录像的胜率取 30%。估计胜率 =（已知胜场 + 提前结束场数 × 30%）÷ 总场数。分组与筛选后的估计也统一使用 30%，这是情景假设，不代表各组真实胜率相同；未纳入调查的其他未知场不套用此值。';
   const investigation=data.investigation_summary?.unknown;
   $('quality').innerHTML=investigation?`<strong>缺失机制已核实：</strong>快照中的 ${investigation.files} 场未知均在本人阵亡后、结算前结束录像；不能视为随机缺失，也不能直接算作负场。<button id="inspect-unknown">查看这 ${investigation.files} 场</button>`:'缺失结果保持未知。仅看完整战报可能存在样本选择偏差。';
   if($('inspect-unknown'))$('inspect-unknown').onclick=()=>{state=defaultState();state.filters=[{key:'completeness',values:['无战报']}];selectedGroup=null;renderControls();render();};
@@ -44,8 +49,8 @@ function render(){
   $('groups').innerHTML=list.length?list.map((g,i)=>{
     const otherKnown=all.known-g.known,otherWins=all.wins-g.wins,diff=g.p!=null&&otherKnown?g.p-otherWins/otherKnown:null;
     const restTotal=all.total-g.total,robust=restTotal>0&&g.boundHigh<otherWins/restTotal;
-    return `<tr ${g.key===selectedGroup?'class="selected"':''}><td class="group-name"><button data-group="${i}">${JSON.parse(g.key).map(esc).join(' / ')}</button>${g.known<10?'<span class="small">小样本 · 先看对局</span>':''}${robust?'<span class="robust" title="当前样本：本组未知全胜、其余未知全负，本组仍较低。不是总体显著性。">本组上界仍低于其余下界</span>':''}</td><td>${g.total} / ${g.known}</td><td>${g.wins} / ${g.losses} / ${g.draws}</td><td class="rate-cell"><div class="rate-main"><b>${pct(g.p)}</b><span class="ci">${pct(g.low)}–${pct(g.high)}</span></div>${g.p!=null?`<div class="track"><i class="interval" style="left:${g.low*100}%;width:${(g.high-g.low)*100}%"></i><i class="point" style="left:${g.p*100}%"></i></div>`:''}</td><td class="${diff<0?'negative':'positive'}">${diff==null?'—':(diff>=0?'+':'')+(diff*100).toFixed(1)+' pp'}</td><td class="unknown">${g.unknown}<span class="small">${pct(g.unknown/g.total)}</span></td><td class="bounds-col">${pct(g.boundLow)}–${pct(g.boundHigh)}</td></tr>`;
-  }).join(''):'<tr><td colspan="7" class="empty">没有符合条件的分组。试着放宽筛选或降低最小已知场数。</td></tr>';
+    return `<tr ${g.key===selectedGroup?'class="selected"':''}><td class="group-name"><button data-group="${i}">${JSON.parse(g.key).map(esc).join(' / ')}</button>${g.known<10?'<span class="small">小样本 · 先看对局</span>':''}${robust?'<span class="robust" title="当前样本：本组未知全胜、其余未知全负，本组仍较低。不是总体显著性。">本组上界仍低于其余下界</span>':''}</td><td>${g.total} / ${g.known}</td><td>${g.wins} / ${g.losses} / ${g.draws}</td><td class="estimate-cell">${pct(g.estimate)}<span class="small">${g.unassigned?'其他未知未估计':g.eligible?'提前结束按 30%':'无须补估'}</span></td><td class="rate-cell"><div class="rate-main"><b>${pct(g.p)}</b><span class="ci">${pct(g.low)}–${pct(g.high)}</span></div>${g.p!=null?`<div class="track"><i class="interval" style="left:${g.low*100}%;width:${(g.high-g.low)*100}%"></i><i class="point" style="left:${g.p*100}%"></i></div>`:''}</td><td class="${diff<0?'negative':'positive'}">${diff==null?'—':(diff>=0?'+':'')+(diff*100).toFixed(1)+' pp'}</td><td class="unknown">${g.unknown}<span class="small">${pct(g.unknown/g.total)}</span></td><td class="bounds-col">${pct(g.boundLow)}–${pct(g.boundHigh)}</td></tr>`;
+  }).join(''):'<tr><td colspan="8" class="empty">没有符合条件的分组。试着放宽筛选或降低最小已知场数。</td></tr>';
   document.querySelectorAll('[data-group]').forEach(el=>el.onclick=()=>{selectedGroup=list[+el.dataset.group].key;render();$('battles-section').scrollIntoView({behavior:'smooth',block:'start'});});
   const selected=list.find(g=>g.key===selectedGroup);
   $('battles-section').hidden=!selected;

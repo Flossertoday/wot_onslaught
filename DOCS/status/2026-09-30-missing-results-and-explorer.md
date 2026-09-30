@@ -47,8 +47,8 @@
 
 1. 项目 `ReplayCache.db`：此前确认这 78 场也是未知，不能补齐。
 2. 当前客户端 `APPDATA/Wargaming.net/WorldOfTanks/battle_results`：现存 55 份，
-   50 份按 arena ID 对应已有完整猛攻战报，另外 5 份 `bonusType=1`，是普通战斗。
-   没有找到缺失的猛攻结果。
+   50 份按 arena ID 对应已有完整天梯战报，另外 5 份 `bonusType=1`，是普通战斗。
+   没有找到缺失的天梯结果。
 
 独立战报缓存使用受限反序列化，只允许原始容器及 set/frozenset，禁止其他全局调用
 和 persistent ID；按 50 个已知战报共同验证了时间、模式、胜方和时长的数组位置，
