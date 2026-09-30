@@ -14,7 +14,11 @@ python tools/explorer/server.py --open-browser
 关闭运行窗口或 Ctrl+C 停止服务。服务只绑定 127.0.0.1，没有上传和修改录像功能。
 数据服务仅使用 Python 标准库，前端无 npm 安装、外部 CDN 或网络依赖。
 
-默认地图分析；左侧添加多个分组标签，并叠加多值筛选。窄屏时先点“展开标签与筛选”。
+默认按地图比较**积分变化**；顶部可切换“积分变化 / 声望 / 胜率”三个并列的结果视图。
+结果视图决定主指标、分组表、升降序排序、相对其余对局的差值和最小有值场数口径。
+积分与声望视图包含均值、中位数、中间 50% 对局、胜局/负局拆分；积分另有已记录净变化。
+切换结果保留当前分组和筛选。保存视图也保存结果指标，旧版视图恢复为胜率。
+左侧添加多个分组标签，并叠加多值筛选。窄屏时先点“展开标签与筛选”。
 点击分组名称查看组内所有对局，再点击时间打开单场详情。
 
 声望与积分已接入：总览及分组显示本人平均声望、场均/合计积分变化及有值场数，
@@ -39,6 +43,8 @@ CSV 是提取器的内部交换格式，服务负责规范化为 JSON；浏览�
 ```powershell
 python -m unittest discover -s tools/explorer -p test_*.py
 node --check tools/explorer/app.js
+node tools/explorer/test_scenario.cjs
+node tools/explorer/test_results.cjs
 ```
 
 缺失机制调查复现：

@@ -11,18 +11,22 @@
 <div class="date-range"><label>起始日期<input id="date-from" type="date"></label><label>结束日期<input id="date-to" type="date"></label></div>
 <div id="filters"></div>
 <div class="section-title space"><h2>显示与比较</h2></div>
-<label>分组至少有多少场已知结果<input id="min-count" type="number" min="0" value="0"></label>
-<label>分组排序<select id="sort"><option value="win_rate">已知胜率：低 → 高</option><option value="estimated">估计胜率（30% 情景）：低 → 高</option><option value="total">总场数：多 → 少</option><option value="unknown">未知占比：高 → 低</option><option value="name">标签名称</option></select></label>
-<label class="checkbox"><input id="bounds" type="checkbox" checked>显示未知结果的胜率上下界</label>
+<label><span id="min-label">分组至少有多少场积分变化数据</span><input id="min-count" type="number" min="0" value="0"></label>
+<label>分组排序<select id="sort"></select></label>
+<label class="checkbox" id="bounds-control"><input id="bounds" type="checkbox" checked>显示未知结果的胜率上下界</label>
 <p class="hint">基线是当前筛选范围。分组差值与其余对局比较。未知结果始终单独保留。</p>
 <div class="save-view"><button id="save-view">保存当前视图</button><button id="load-view" class="quiet">恢复视图</button><span id="view-status" class="hint" role="status"></span></div>
 </div></aside>
 <section class="workspace">
-<div id="methods" hidden class="note"><strong>探索线索，不自动判定原因</strong><p>胜率 = 胜场 ÷ 已知结果（含平局）。区间使用 Wilson 95%；未知上下界分别假设未知全负、全胜，不是置信区间。标签组合越细，偶然极端值越常见。</p><p>地图的低胜率本身就是复盘线索，不必等显著性才看录像。但确认异常应预先固定比较、用后续新对局验证，并考虑日期、选车、分段和连续作战。这里不为自由筛选反复计算“显著”标记。</p><p>伤害、存活、胜负是战后标签，可用于描述与复盘，不能当作赛前胜率的独立原因。队友人数排除本人；段位类别不能替代精确积分。定级赛单独保留。</p></div>
+<div id="methods" hidden class="note"><strong>探索线索，不自动判定原因</strong><p>积分变化、声望与胜率是并列的结果指标。均值、净积分、胜局/负局均值仅使用对应字段有值的场次。中间 50% 是样本的第 25–75 百分位，不是均值置信区间；差值基线排除当前分组。缺失场不补估声望或积分。</p><p>胜率 = 胜场 ÷ 已知结果（含平局）。区间使用 Wilson 95%；未知上下界分别假设未知全负、全胜，不是置信区间。标签组合越细，偶然极端值越常见。</p><p>地图的低胜率本身就是复盘线索，不必等显著性才看录像。但确认异常应预先固定比较、用后续新对局验证，并考虑日期、选车、分段和连续作战。这里不为自由筛选反复计算“显著”标记。</p><p>伤害、存活、胜负是战后标签，可用于描述与复盘，不能当作赛前胜率的独立原因。队友人数排除本人；段位类别不能替代精确积分。定级赛单独保留。</p></div>
+<section class="result-picker" aria-label="分析结果">
+<div><span class="eyebrow">比较什么结果</span><h2>天梯表现</h2></div>
+<div class="result-buttons" role="group" aria-label="结果指标"><button data-result="rating" aria-pressed="true">积分变化</button><button data-result="prestige" aria-pressed="false">声望</button><button data-result="win" aria-pressed="false">胜率</button></div>
+<p id="result-note" class="hint"></p></section>
 <div id="quality" class="quality"></div><p id="scenario-note" class="hint"></p><div id="kpis" class="kpis"></div>
-<div class="section-title"><div><h2>标签组合</h2><p id="group-caption" class="hint"></p></div><span class="pill">探索性分析</span></div>
+<div class="section-title"><div><h2 id="groups-title">积分变化 · 分组比较</h2><p id="group-caption" class="hint"></p></div><span class="pill">探索性分析</span></div>
 <div id="post-label-note" class="note" hidden>当前使用了战后标签。这里的关联适合解释发生了什么，不表示赛前因果。</div>
-<div class="table-wrap"><table id="groups-table"><thead><tr><th>标签组合</th><th>场数 / 已知</th><th>胜 / 负 / 平</th><th>估计胜率 · 30% 情景</th><th>已知胜率 · 95% 区间</th><th>已知胜率差</th><th>未知</th><th class="bounds-col">含未知的上下界</th><th>本人平均声望</th><th>本人场均积分变化</th></tr></thead><tbody id="groups"></tbody></table></div>
+<div class="table-wrap"><table id="groups-table"><thead><tr id="group-head"></tr></thead><tbody id="groups"></tbody></table></div>
 <section id="battles-section" hidden><div class="section-title space"><div><h2 id="battles-title">分组对局</h2><p class="hint">选择一场，查看声望、积分变化、双方全场战报和录制时间线。</p></div><button id="clear-group" class="quiet">清除选中</button></div><div class="table-wrap"><table><thead><tr><th>时间</th><th>地图 / 车辆</th><th>出生队伍</th><th>结果</th><th>伤害</th><th>声望</th><th>积分变化</th><th>录制状态</th></tr></thead><tbody id="battles"></tbody></table></div></section>
 </section></main>
 <dialog id="detail"><div class="detail-top"><span class="eyebrow">单场证据</span><button id="close-detail" aria-label="关闭单场详情">关闭 ✕</button></div><div id="detail-body"></div></dialog>

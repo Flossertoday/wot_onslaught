@@ -7,7 +7,8 @@ const number=n=>n==null?'—':Number(n).toLocaleString('zh-CN',{maximumFractionD
 const signed=n=>n==null?'—':(n>0?'+':'')+number(n);
 const resultName={win:'胜',loss:'负',draw:'平',unknown:'未知'};
 const dimension=k=>data.dimensions.find(d=>d.key===k);
-function defaultState(){return {dims:['map'],filters:[],from:data.metadata.window_start.slice(0,10),to:data.metadata.cutoff.slice(0,10),min:0,sort:'win_rate',bounds:true};}
+const RESULTS={rating:{label:'积分变化',mean:'场均积分变化',format:signed},prestige:{label:'声望',mean:'平均声望',format:number},win:{label:'胜率',mean:'已知胜率',format:pct}};
+function defaultState(){return {metric:'rating',dims:['map'],filters:[],from:data.metadata.window_start.slice(0,10),to:data.metadata.cutoff.slice(0,10),min:0,sort:'result_asc',bounds:true};}
 function options(selected){return data.dimensions.map(d=>`<option value="${d.key}" ${d.key===selected?'selected':''}>${esc(d.label)}${d.kind==='战后'?' · 战后':''}</option>`).join('');}
 function renderControls(){
   $('dimensions').innerHTML=state.dims.map((d,i)=>`<div class="dim-row"><select aria-label="分组标签 ${i+1}" data-dim="${i}">${options(d)}</select><button aria-label="删除分组标签 ${i+1}" data-remove-dim="${i}" ${state.dims.length===1?'disabled':''}>×</button></div>`).join('');
@@ -20,13 +21,16 @@ function renderControls(){
   document.querySelectorAll('[data-filter-key]').forEach(el=>el.onchange=()=>{state.filters[+el.dataset.filterKey]={key:el.value,values:[]};selectedGroup=null;renderControls();render();});
   document.querySelectorAll('[data-filter-values]').forEach(el=>el.onchange=()=>{state.filters[+el.dataset.filterValues].values=[...el.selectedOptions].map(o=>o.value);selectedGroup=null;render();});
   document.querySelectorAll('[data-remove-filter]').forEach(el=>el.onclick=()=>{state.filters.splice(+el.dataset.removeFilter,1);selectedGroup=null;renderControls();render();});
+  renderResultControls();
   $('date-from').value=state.from;$('date-to').value=state.to;$('min-count').value=state.min;$('sort').value=state.sort;$('bounds').checked=state.bounds;
 }
 function filtered(){return data.records.filter(r=>(!state.from||r.tags.day>=state.from)&&(!state.to||r.tags.day<=state.to)&&state.filters.every(f=>!f.values.length||f.values.includes(r.tags[f.key])));}
 function metricStats(rows,key){
-  const values=rows.map(r=>r[key]).filter(v=>typeof v==='number'&&Number.isFinite(v));
+  const values=rows.map(r=>r[key]).filter(v=>typeof v==='number'&&Number.isFinite(v)).sort((a,b)=>a-b);
   const count=values.length,total=count?values.reduce((a,b)=>a+b,0):null;
-  return {count,total,mean:count?total/count:null};
+  const quantile=p=>{if(!count)return null;const index=(count-1)*p,low=Math.floor(index);return values[low]+(values[Math.ceil(index)]-values[low])*(index-low);};
+  const outcome=result=>{const subset=rows.filter(r=>r.result===result&&typeof r[key]==='number'&&Number.isFinite(r[key]));return {count:subset.length,mean:subset.length?subset.reduce((sum,r)=>sum+r[key],0)/subset.length:null};};
+  return {count,total,mean:count?total/count:null,median:quantile(.5),q1:quantile(.25),q3:quantile(.75),win:outcome('win'),loss:outcome('loss')};
 }
 function stats(rows){
   const wins=rows.filter(r=>r.result==='win').length,losses=rows.filter(r=>r.result==='loss').length,draws=rows.filter(r=>r.result==='draw').length;
@@ -39,30 +43,97 @@ function stats(rows){
   const estimate=total&&unassigned===0?expectedWins/total:null;
   return {wins,losses,draws,known,total,unknown,p,low,high,eligible,unassigned,expectedWins,estimate,prestige:metricStats(rows,'comp7PrestigePoints'),rating:metricStats(rows,'rating_delta'),boundLow:total?wins/total:null,boundHigh:total?(wins+unknown)/total:null};
 }
+function resultSummary(s,metric){
+  return metric==='win'?{count:s.known,mean:s.p,total:s.wins}:s[metric];
+}
+function resultDifference(group,all,metric){
+  const g=resultSummary(group,metric),a=resultSummary(all,metric),restCount=a.count-g.count;
+  return g.mean==null||restCount<=0?null:g.mean-(a.total-g.total)/restCount;
+}
+function compareResults(a,b,metric,sort){
+  const am=resultSummary(a,metric),bm=resultSummary(b,metric);
+  if(sort==='total')return b.total-a.total;
+  if(sort==='unknown')return (b.total-bm.count)/b.total-(a.total-am.count)/a.total;
+  if(sort==='name')return a.key.localeCompare(b.key,'zh-CN');
+  const av=sort==='estimated'?a.estimate:am.mean,bv=sort==='estimated'?b.estimate:bm.mean;
+  // Missing groups always follow observed groups, in either sort direction.
+  if(av==null||bv==null)return av==null?(bv==null?0:1):-1;
+  return (sort==='result_desc'?bv-av:av-bv)||bm.count-am.count;
+}
+function restoreState(saved){
+  if(!saved||!Array.isArray(saved.dims)||!saved.dims.length||saved.dims.some(k=>!dimension(k))||!Array.isArray(saved.filters)||saved.filters.some(f=>!dimension(f.key)||!Array.isArray(f.values)))throw Error('Invalid view');
+  const metric=saved.metric??'win'; // Old saved views were explicitly about win rate.
+  if(!Object.hasOwn(RESULTS,metric))throw Error('Invalid result');
+  const sort=saved.sort==='win_rate'?'result_asc':saved.sort??'result_asc';
+  if(!['result_asc','result_desc','total','unknown','name','estimated'].includes(sort)||(sort==='estimated'&&metric!=='win'))throw Error('Invalid sort');
+  return {...defaultState(),...saved,metric,sort};
+}
+function renderResultControls(){
+  const config=RESULTS[state.metric],isWin=state.metric==='win';
+  document.querySelectorAll('[data-result]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.result===state.metric)));
+  $('min-label').textContent=isWin?'分组至少有多少场已知胜负':'分组至少有多少场'+config.label+'数据';
+  $('bounds-control').hidden=!isWin;
+  const options=[['result_asc',config.mean+'：低 → 高'],['result_desc',config.mean+'：高 → 低'],
+    ...(isWin?[['estimated','估计胜率（30% 情景）：低 → 高']]:[]),['total','总场数：多 → 少'],['unknown',config.label+'缺失占比：高 → 低'],['name','标签名称']];
+  $('sort').innerHTML=options.map(([key,label])=>`<option value="${key}">${label}</option>`).join('');
+  $('sort').value=state.sort;
+}
+function renderOverview(all){
+  const metric=state.metric,config=RESULTS[metric],m=resultSummary(all,metric),isWin=metric==='win',fmt=config.format;
+  const coverage=`有值 ${m.count} / ${all.total} 场 · 缺失 ${all.total-m.count} 场`;
+  const cards=isWin?[
+    ['已知胜率',pct(all.p),`${all.wins} 胜 · ${all.losses} 负 · ${all.draws} 平`],
+    ['估计胜率 · 30% 情景',pct(all.estimate),all.unassigned?'含未纳入估计的未知场':`${all.wins} + ${all.eligible} × 30% 预计胜场`],
+    ['当前对局',number(all.total),coverage],
+    ['已知胜率 · 95% 区间',`${pct(all.low)}–${pct(all.high)}`,'Wilson 区间，仅基于已知胜负'],
+    ['含未知的胜率范围',`${pct(all.boundLow)}–${pct(all.boundHigh)}`,'未知全负 → 未知全胜'],
+    ['结果未知',number(all.unknown),`${pct(all.total?all.unknown/all.total:null)} 的当前样本`]
+  ]:[
+    [config.mean,fmt(m.mean),coverage],
+    metric==='rating'?['已记录积分净变化',signed(m.total),'有值场次合计；未补估缺失场']:['声望中位数',number(m.median),'一半有值场次不高于此值'],
+    ['当前对局',number(all.total),coverage],
+    ['中间 50% 对局',`${fmt(m.q1)} ～ ${fmt(m.q3)}`,'第 25–75 百分位；描述分布，不是置信区间'],
+    [metric==='rating'?'胜局平均加分':'胜局平均声望',fmt(m.win.mean),`有值 ${m.win.count} / ${all.wins} 胜场`],
+    [metric==='rating'?'负局平均扣分':'负局平均声望',fmt(m.loss.mean),`有值 ${m.loss.count} / ${all.losses} 负场`]
+  ];
+  $('kpis').innerHTML=cards.map(([label,value,hint],i)=>`<div class="kpi ${i===0?'primary-kpi':''}"><small>${label}</small><strong>${value}</strong><span>${hint}</span></div>`).join('');
+  $('scenario-note').hidden=!isWin;
+  $('scenario-note').textContent='按你的估计：78 场提前结束录像的胜率取 30%。估计胜率 =（已知胜场 + 提前结束场数 × 30%）÷ 总场数。筛选后的各组也统一按 30% 分配，这是情景假设。此情景仅用于胜率，不改写逐场结果，也不补估声望或积分。未调查的其他未知场不套用此值。';
+  $('result-note').textContent=isWin?'比较胜负结果，保留未知比例、置信区间和 30% 情景。':metric==='rating'?'比较本人每场实际加减分。场均反映有值对局的得分效率，净变化是这些对局的合计。胜局和负局分别统计；缺失场不补估。':'比较本人声望表现。显示均值、中位数和分布，并分别比较胜局、负局。声望保留原值，可超过 200。';
+}
+function renderGroupTable(list,all){
+  const metric=state.metric,isWin=metric==='win',fmt=RESULTS[metric].format;
+  const headers=isWin?['标签组合','场数 / 已知','胜 / 负 / 平','估计胜率 · 30% 情景','已知胜率 · 95% 区间','相对其余胜率差','未知','含未知的上下界']:
+    ['标签组合','总场 / 有值',RESULTS[metric].mean,'中位数 · 中间 50%',metric==='rating'?'已记录积分合计':'胜局 / 负局平均声望',metric==='rating'?'胜局加分 / 负局扣分':'胜 / 负 / 平','相对其余均值差','缺失'];
+  $('group-head').innerHTML=headers.map((label,i)=>`<th ${isWin&&i===7?'class="bounds-col"':''}>${label}</th>`).join('');
+  $('groups-table').classList.toggle('bounds-hidden',isWin&&!state.bounds);
+  $('groups').innerHTML=list.length?list.map((g,i)=>{
+    const m=resultSummary(g,metric),diff=resultDifference(g,all,metric),missing=g.total-m.count;
+    const restTotal=all.total-g.total,robust=isWin&&restTotal>0&&g.boundHigh<(all.wins-g.wins)/restTotal;
+    const title=`<td class="group-name"><button data-group="${i}">${JSON.parse(g.key).map(esc).join(' / ')}</button>${m.count<10?'<span class="small">小样本 · 先看对局</span>':''}${robust?'<span class="robust" title="当前样本中，本组未知全胜、其余未知全负，本组仍较低。">本组上界仍低于其余下界</span>':''}</td>`;
+    const difference=`<td class="${diff==null?'':diff<0?'negative':'positive'}">${diff==null?'—':signed(isWin?diff*100:diff)+(isWin?' pp':'')}</td>`;
+    const missingCell=`<td class="unknown">${missing}<span class="small">${pct(g.total?missing/g.total:null)}</span></td>`;
+    const outcomes=`${g.wins} / ${g.losses} / ${g.draws}`;
+    const content=isWin?
+      `<td>${g.total} / ${g.known}</td><td>${outcomes}</td><td class="estimate-cell">${pct(g.estimate)}<span class="small">${g.unassigned?'其他未知未估计':g.eligible?'提前结束按 30%':'无须补估'}</span></td><td class="rate-cell"><div class="rate-main"><b>${pct(g.p)}</b><span class="ci">${pct(g.low)}–${pct(g.high)}</span></div>${g.p!=null?`<div class="track"><i class="interval" style="left:${g.low*100}%;width:${(g.high-g.low)*100}%"></i><i class="point" style="left:${g.p*100}%"></i></div>`:''}</td>${difference}${missingCell}<td class="bounds-col">${pct(g.boundLow)}–${pct(g.boundHigh)}</td>`:
+      `<td>${g.total} / ${m.count}</td><td class="metric-primary ${metric==='rating'&&m.mean!=null?(m.mean<0?'negative':'positive'):''}">${fmt(m.mean)}</td><td>${fmt(m.median)}<span class="small">${fmt(m.q1)} ～ ${fmt(m.q3)}</span></td><td>${metric==='rating'?signed(m.total):fmt(m.win.mean)+' / '+fmt(m.loss.mean)}${metric==='prestige'?`<span class="small">有值 ${m.win.count} 胜 / ${m.loss.count} 负</span>`:''}</td><td>${metric==='rating'?fmt(m.win.mean)+' / '+fmt(m.loss.mean)+`<span class="small">有值 ${m.win.count} 胜 / ${m.loss.count} 负</span>`:outcomes}</td>${difference}${missingCell}`;
+    return `<tr ${g.key===selectedGroup?'class="selected"':''}>${title}${content}</tr>`;
+  }).join(''):'<tr><td colspan="8" class="empty">没有符合条件的分组。试着放宽筛选或降低最小有值场数。</td></tr>';
+}
 function render(){
   const rows=filtered(),all=stats(rows),groups=new Map();
   for(const r of rows){const key=JSON.stringify(state.dims.map(d=>r.tags[d]));if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);}
-  let list=[...groups.entries()].map(([key,rows])=>({key,rows,...stats(rows)})).filter(g=>g.known>=state.min);
-  list.sort((a,b)=>state.sort==='total'?b.total-a.total:state.sort==='unknown'?(b.unknown/b.total)-(a.unknown/a.total):state.sort==='name'?a.key.localeCompare(b.key,'zh-CN'):state.sort==='estimated'?(a.estimate??Infinity)-(b.estimate??Infinity):(a.p??Infinity)-(b.p??Infinity)||b.known-a.known);
-  $('kpis').innerHTML=[['当前对局',number(all.total),'按日期和标签筛选'],['估计胜率 · 30% 情景',pct(all.estimate),all.unassigned?'含未纳入估计的未知场':`${all.wins} + ${all.eligible} × 30% 预计胜场`],['已知胜率',pct(all.p),`${all.wins} 胜 · ${all.losses} 负 · ${all.draws} 平`],['结果未知',number(all.unknown),`${pct(all.total?all.unknown/all.total:null)} 的当前样本`],['含未知的范围',`${pct(all.boundLow)}–${pct(all.boundHigh)}`,'未知全负 → 未知全胜'],['分组数量',number(list.length),`共 ${groups.size} 组，按已知场数显示`]].map(([l,v,h])=>`<div class="kpi"><small>${l}</small><strong ${l==='含未知的范围'?'style="font-size:20px"':''}>${v}</strong><span>${h}</span></div>`).join('');
-  $('scenario-note').textContent='按你的估计：78 场提前结束录像的胜率取 30%。估计胜率 =（已知胜场 + 提前结束场数 × 30%）÷ 总场数。分组与筛选后的估计也统一使用 30%，这是情景假设，不代表各组真实胜率相同；未纳入调查的其他未知场不套用此值。';
-  $('kpis').insertAdjacentHTML('beforeend',`<div class="kpi"><small>本人平均声望</small><strong>${number(all.prestige.mean)}</strong><span>有值 ${all.prestige.count} / ${all.total} 场 · 原始声望可超过 200</span></div><div class="kpi"><small>已记录积分净变化</small><strong>${signed(all.rating.total)}</strong><span>有值 ${all.rating.count} / ${all.total} 场 · 场均 ${signed(all.rating.mean)}，未补估缺失场</span></div>`);
+  const list=[...groups.entries()].map(([key,rows])=>({key,rows,...stats(rows)})).filter(g=>resultSummary(g,state.metric).count>=state.min);
+  list.sort((a,b)=>compareResults(a,b,state.metric,state.sort));
+  renderOverview(all);
   const investigation=data.investigation_summary?.unknown;
-  $('quality').innerHTML=investigation?`<strong>缺失机制已核实：</strong>快照中的 ${investigation.files} 场未知均在本人阵亡后、结算前结束录像；不能视为随机缺失，也不能直接算作负场。<button id="inspect-unknown">查看这 ${investigation.files} 场</button>`:'缺失结果保持未知。仅看完整战报可能存在样本选择偏差。';
-  if($('inspect-unknown'))$('inspect-unknown').onclick=()=>{state=defaultState();state.filters=[{key:'completeness',values:['无战报']}];selectedGroup=null;renderControls();render();};
-  $('group-caption').textContent=state.dims.map(k=>dimension(k).label).join(' × ')+' · 当前基线 '+pct(all.p)+' · 点击分组查看具体对局';
+  $('quality').innerHTML=investigation?`<strong>数据覆盖：</strong>快照中的 ${investigation.files} 场在本人阵亡后、结算前结束录像，缺少最终胜负、声望和积分变化。<button id="inspect-unknown">查看这 ${investigation.files} 场</button>`:'缺失结果保持未知。';
+  if($('inspect-unknown'))$('inspect-unknown').onclick=()=>{const metric=state.metric;state={...defaultState(),metric};state.filters=[{key:'completeness',values:['无战报']}];selectedGroup=null;renderControls();render();};
+  const config=RESULTS[state.metric];
+  $('groups-title').textContent=config.label+' · 分组比较';
+  $('group-caption').textContent=state.dims.map(k=>dimension(k).label).join(' × ')+` · 当前${config.mean} ${config.format(resultSummary(all,state.metric).mean)} · ${list.length} / ${groups.size} 组 · 差值与其余对局比较`;
   $('post-label-note').hidden=!state.dims.concat(state.filters.map(f=>f.key)).some(k=>dimension(k)?.kind==='战后');
-  $('groups-table').classList.toggle('bounds-hidden',!state.bounds);
-  $('groups').innerHTML=list.length?list.map((g,i)=>{
-    const otherKnown=all.known-g.known,otherWins=all.wins-g.wins,diff=g.p!=null&&otherKnown?g.p-otherWins/otherKnown:null;
-    const restTotal=all.total-g.total,robust=restTotal>0&&g.boundHigh<otherWins/restTotal;
-    return `<tr ${g.key===selectedGroup?'class="selected"':''}><td class="group-name"><button data-group="${i}">${JSON.parse(g.key).map(esc).join(' / ')}</button>${g.known<10?'<span class="small">小样本 · 先看对局</span>':''}${robust?'<span class="robust" title="当前样本：本组未知全胜、其余未知全负，本组仍较低。不是总体显著性。">本组上界仍低于其余下界</span>':''}</td><td>${g.total} / ${g.known}</td><td>${g.wins} / ${g.losses} / ${g.draws}</td><td class="estimate-cell">${pct(g.estimate)}<span class="small">${g.unassigned?'其他未知未估计':g.eligible?'提前结束按 30%':'无须补估'}</span></td><td class="rate-cell"><div class="rate-main"><b>${pct(g.p)}</b><span class="ci">${pct(g.low)}–${pct(g.high)}</span></div>${g.p!=null?`<div class="track"><i class="interval" style="left:${g.low*100}%;width:${(g.high-g.low)*100}%"></i><i class="point" style="left:${g.p*100}%"></i></div>`:''}</td><td class="${diff<0?'negative':'positive'}">${diff==null?'—':(diff>=0?'+':'')+(diff*100).toFixed(1)+' pp'}</td><td class="unknown">${g.unknown}<span class="small">${pct(g.unknown/g.total)}</span></td><td class="bounds-col">${pct(g.boundLow)}–${pct(g.boundHigh)}</td></tr>`;
-  }).join(''):'<tr><td colspan="8" class="empty">没有符合条件的分组。试着放宽筛选或降低最小已知场数。</td></tr>';
-  if(list.length)document.querySelectorAll('#groups tr').forEach((tr,i)=>{
-    const g=list[i];
-    tr.insertAdjacentHTML('beforeend',`<td>${number(g.prestige.mean)}<span class="small">有值 ${g.prestige.count} / ${g.total}</span></td><td>${signed(g.rating.mean)}<span class="small">合计 ${signed(g.rating.total)} · 有值 ${g.rating.count} / ${g.total}</span></td>`);
-  });
-  else $('groups').querySelector('td').colSpan=10;
+  renderGroupTable(list,all);
   document.querySelectorAll('[data-group]').forEach(el=>el.onclick=()=>{selectedGroup=list[+el.dataset.group].key;render();$('battles-section').scrollIntoView({behavior:'smooth',block:'start'});});
   const selected=list.find(g=>g.key===selectedGroup);
   $('battles-section').hidden=!selected;
@@ -73,6 +144,7 @@ function render(){
     document.querySelectorAll('[data-battle]').forEach(el=>el.onclick=()=>showDetail(sorted[+el.dataset.battle]));
   }
 }
+
 function participantsTable(r,side){
   const list=r.players.filter(p=>p.is_ally===side).sort((a,b)=>(b.comp7PrestigePoints??-Infinity)-(a.comp7PrestigePoints??-Infinity));
   if(!list.length)return '<p class="hint">没有有效最终战报，双方表现与声望保持缺失。</p>';
@@ -98,6 +170,7 @@ function showDetail(r){
   $('detail').showModal();
 }
 function wire(){
+  document.querySelectorAll('[data-result]').forEach(button=>button.onclick=()=>{state.metric=button.dataset.result;state.sort='result_asc';renderResultControls();render();});
   $('controls-toggle').onclick=()=>{const open=$('controls').classList.toggle('expanded');$('controls-toggle').setAttribute('aria-expanded',String(open));$('controls-toggle').textContent=open?'收起标签与筛选':'展开标签与筛选';};
   $('add-dimension').onclick=()=>{const next=data.dimensions.find(d=>!state.dims.includes(d.key));if(next){state.dims.push(next.key);selectedGroup=null;renderControls();render();}};
   $('add-filter').onclick=()=>{state.filters.push({key:'map',values:[]});renderControls();};
@@ -109,7 +182,7 @@ function wire(){
   $('clear-group').onclick=()=>{selectedGroup=null;render();};
   $('close-detail').onclick=()=>$('detail').close();
   $('save-view').onclick=()=>{try{localStorage.setItem('onslaught-view-v1',JSON.stringify(state));$('view-status').textContent='已保存到此浏览器';}catch{$('view-status').textContent='此浏览器无法保存视图';}};
-  $('load-view').onclick=()=>{try{const saved=JSON.parse(localStorage.getItem('onslaught-view-v1'));if(!saved)throw Error();if(!Array.isArray(saved.dims)||!saved.dims.length||saved.dims.some(k=>!dimension(k))||!Array.isArray(saved.filters)||saved.filters.some(f=>!dimension(f.key)||!Array.isArray(f.values)))throw Error();state={...defaultState(),...saved};selectedGroup=null;renderControls();render();$('view-status').textContent='已恢复保存的视图';}catch{$('view-status').textContent='没有可恢复的视图';}};
+  $('load-view').onclick=()=>{try{const saved=JSON.parse(localStorage.getItem('onslaught-view-v1'));state=restoreState(saved);selectedGroup=null;renderControls();render();$('view-status').textContent='已恢复保存的视图';}catch{$('view-status').textContent='没有可恢复的视图';}};
 }
 async function init(){try{const response=await fetch('/api/data');if(!response.ok)throw Error('数据读取失败');data=await response.json();state=defaultState();$('snapshot').textContent=`本地快照 · ${data.metadata.window_start.slice(0,10)} 至 ${data.metadata.cutoff.slice(0,10)} · ${data.metadata.recent_count} 场`;wire();renderControls();render();}catch(error){$('error').hidden=false;$('error').textContent='加载失败：'+error.message;}}
 init();
