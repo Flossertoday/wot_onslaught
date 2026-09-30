@@ -1,0 +1,10 @@
+# drafts
+.drafts/*
+!.drafts/README.md
+
+# worktrees
+.worktrees/*
+!.worktrees/README.md
+
+# local Python analysis cache
+__pycache__/

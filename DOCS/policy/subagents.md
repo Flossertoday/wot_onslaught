@@ -1,0 +1,1 @@
+Use gpt-6 luna max as default. Could upgrade to gpt-6 astra if needed. 
