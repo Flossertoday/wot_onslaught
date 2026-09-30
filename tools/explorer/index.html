@@ -19,7 +19,7 @@
 <div class="save-view"><button id="save-view">保存当前视图</button><button id="load-view" class="quiet">恢复视图</button><span id="view-status" class="hint" role="status"></span></div>
 </div></aside>
 <section class="workspace">
-<div id="methods" hidden class="note"><strong>探索线索，不自动判定原因</strong><p>积分变化、声望与胜率是并列的结果指标。均值、净积分、胜局/负局均值仅使用对应字段有值的场次。中间 50% 是样本的第 25–75 百分位，不是均值置信区间；差值基线排除当前分组。缺失场不补估声望或积分。</p><p>胜率 = 胜场 ÷ 已知结果（含平局）。区间使用 Wilson 95%；未知上下界分别假设未知全负、全胜，不是置信区间。标签组合越细，偶然极端值越常见。</p><p>地图的低胜率本身就是复盘线索，不必等显著性才看录像。但确认异常应预先固定比较、用后续新对局验证，并考虑日期、选车、分段和连续作战。这里不为自由筛选反复计算“显著”标记。</p><p>伤害、存活、胜负是战后标签，可用于描述与复盘，不能当作赛前胜率的独立原因。队友人数排除本人；段位类别不能替代精确积分。定级赛单独保留。</p></div>
+<div id="methods" hidden class="note"><strong>探索线索，不自动判定原因</strong><p>积分变化、声望与胜率是并列的结果指标。均值、净积分、胜局/负局均值仅使用对应字段有值的场次。中间 50% 是样本的第 25–75 百分位，不是均值置信区间；差值基线排除当前分组。缺失场不补估声望或积分。</p><p>天梯模式没有平局；胜率 = 胜场 ÷（胜场 + 负场）。区间使用 Wilson 95%；未知上下界分别假设未知全负、全胜，不是置信区间。标签组合越细，偶然极端值越常见。</p><p>地图的低胜率本身就是复盘线索，不必等显著性才看录像。但确认异常应预先固定比较、用后续新对局验证，并考虑日期、选车、分段和连续作战。这里不为自由筛选反复计算“显著”标记。</p><p>伤害、存活、胜负是战后标签，可用于描述与复盘，不能当作赛前胜率的独立原因。队友人数排除本人；段位类别不能替代精确积分。定级赛单独保留。</p></div>
 <section class="result-picker" aria-label="分析结果">
 <div><span class="eyebrow">比较什么结果</span><h2>天梯表现</h2></div>
 <div class="result-buttons" role="group" aria-label="结果指标"><button data-result="rating" aria-pressed="true">积分变化</button><button data-result="prestige" aria-pressed="false">声望</button><button data-result="win" aria-pressed="false">胜率</button></div>

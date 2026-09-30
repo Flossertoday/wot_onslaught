@@ -82,7 +82,7 @@ function renderOverview(all){
   const metric=state.metric,config=RESULTS[metric],m=resultSummary(all,metric),isWin=metric==='win',fmt=config.format;
   const coverage=`有值 ${m.count} / ${all.total} 场 · 缺失 ${all.total-m.count} 场`;
   const cards=isWin?[
-    ['已知胜率',pct(all.p),`${all.wins} 胜 · ${all.losses} 负 · ${all.draws} 平`],
+    ['已知胜率',pct(all.p),`${all.wins} 胜 · ${all.losses} 负`],
     ['估计胜率 · 30% 情景',pct(all.estimate),all.unassigned?'含未纳入估计的未知场':`${all.wins} + ${all.eligible} × 30% 预计胜场`],
     ['当前对局',number(all.total),coverage],
     ['已知胜率 · 95% 区间',`${pct(all.low)}–${pct(all.high)}`,'Wilson 区间，仅基于已知胜负'],
@@ -103,8 +103,8 @@ function renderOverview(all){
 }
 function renderGroupTable(list,all){
   const metric=state.metric,isWin=metric==='win',fmt=RESULTS[metric].format;
-  const headers=isWin?['标签组合','场数 / 已知','胜 / 负 / 平','估计胜率 · 30% 情景','已知胜率 · 95% 区间','相对其余胜率差','未知','含未知的上下界']:
-    ['标签组合','总场 / 有值',RESULTS[metric].mean,'中位数 · 中间 50%',metric==='rating'?'已记录积分合计':'胜局 / 负局平均声望',metric==='rating'?'胜局加分 / 负局扣分':'胜 / 负 / 平','相对其余均值差','缺失'];
+  const headers=isWin?['标签组合','场数 / 已知','胜 / 负','估计胜率 · 30% 情景','已知胜率 · 95% 区间','相对其余胜率差','未知','含未知的上下界']:
+    ['标签组合','总场 / 有值',RESULTS[metric].mean,'中位数 · 中间 50%',metric==='rating'?'已记录积分合计':'胜局 / 负局平均声望',metric==='rating'?'胜局加分 / 负局扣分':'胜 / 负','相对其余均值差','缺失'];
   $('group-head').innerHTML=headers.map((label,i)=>`<th ${isWin&&i===7?'class="bounds-col"':''}>${label}</th>`).join('');
   $('groups-table').classList.toggle('bounds-hidden',isWin&&!state.bounds);
   $('groups').innerHTML=list.length?list.map((g,i)=>{
@@ -113,7 +113,7 @@ function renderGroupTable(list,all){
     const title=`<td class="group-name"><button data-group="${i}">${JSON.parse(g.key).map(esc).join(' / ')}</button>${m.count<10?'<span class="small">小样本 · 先看对局</span>':''}${robust?'<span class="robust" title="当前样本中，本组未知全胜、其余未知全负，本组仍较低。">本组上界仍低于其余下界</span>':''}</td>`;
     const difference=`<td class="${diff==null?'':diff<0?'negative':'positive'}">${diff==null?'—':signed(isWin?diff*100:diff)+(isWin?' pp':'')}</td>`;
     const missingCell=`<td class="unknown">${missing}<span class="small">${pct(g.total?missing/g.total:null)}</span></td>`;
-    const outcomes=`${g.wins} / ${g.losses} / ${g.draws}`;
+    const outcomes=`${g.wins} / ${g.losses}`;
     const content=isWin?
       `<td>${g.total} / ${g.known}</td><td>${outcomes}</td><td class="estimate-cell">${pct(g.estimate)}<span class="small">${g.unassigned?'其他未知未估计':g.eligible?'提前结束按 30%':'无须补估'}</span></td><td class="rate-cell"><div class="rate-main"><b>${pct(g.p)}</b><span class="ci">${pct(g.low)}–${pct(g.high)}</span></div>${g.p!=null?`<div class="track"><i class="interval" style="left:${g.low*100}%;width:${(g.high-g.low)*100}%"></i><i class="point" style="left:${g.p*100}%"></i></div>`:''}</td>${difference}${missingCell}<td class="bounds-col">${pct(g.boundLow)}–${pct(g.boundHigh)}</td>`:
       `<td>${g.total} / ${m.count}</td><td class="metric-primary ${metric==='rating'&&m.mean!=null?(m.mean<0?'negative':'positive'):''}">${fmt(m.mean)}</td><td>${fmt(m.median)}<span class="small">${fmt(m.q1)} ～ ${fmt(m.q3)}</span></td><td>${metric==='rating'?signed(m.total):fmt(m.win.mean)+' / '+fmt(m.loss.mean)}${metric==='prestige'?`<span class="small">有值 ${m.win.count} 胜 / ${m.loss.count} 负</span>`:''}</td><td>${metric==='rating'?fmt(m.win.mean)+' / '+fmt(m.loss.mean)+`<span class="small">有值 ${m.win.count} 胜 / ${m.loss.count} 负</span>`:outcomes}</td>${difference}${missingCell}`;
