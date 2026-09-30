@@ -82,22 +82,20 @@ def rank_label(player, detailed=True):
 
 
 def lobby_type(players):
-    # A room includes both teams and self. Qualification is not a known rank.
-    if len(players) != 14 or any(
-        p.get('qualification') or not p.get('rank_raw') or p['rank_raw'][0] not in RANKS
-        for p in players
-    ):
+    # Require the original full room, then skip qualification players entirely.
+    if len(players) != 14:
         return '未知'
-    ranks = [p['rank_raw'][0] for p in players]
+    ranked = [p for p in players if not p.get('qualification')]
+    if any(not p.get('rank_raw') or p['rank_raw'][0] not in RANKS for p in ranked):
+        return '未知'
+    ranks = [p['rank_raw'][0] for p in ranked]
     low = sum(rank in (4, 5) for rank in ranks)
     high = any(rank in (1, 2) for rank in ranks)
-    if low >= 6:
-        return '白银局'
-    if high and low <= 2:
+    if high and low <= 1:
         return '高压局'
-    if not high and low <= 4:
+    if not high and ranks.count(3) >= 6:
         return '黄金局'
-    return '未分类'
+    return '低压局'
 
 
 def build_data(evidence=EVIDENCE, investigation_evidence=None):

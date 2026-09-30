@@ -36,29 +36,41 @@ class ExplorerTests(unittest.TestCase):
         self.assertEqual(rank_label({'rank_raw':[3,1,19],'qualification':True}),'定级赛')
 
     def test_lobby_boundaries_and_full_room_count(self):
-        def room(low, high=None):
-            # Self is the last player; both sides contain low-rank players.
-            ranks = [4 if i % 2 else 5 for i in range(low)] + [3] * (14-low)
-            if high is not None:
-                ranks[-1] = high
+        def room(ranks):
             return [dict(rank_raw=[rank,1,0],is_self=i==13,is_ally=i>=7)
                     for i,rank in enumerate(ranks)]
-        for high in (None,1,2):
-            for low in range(14):
-                expected = ('白银局' if low>=6 else '高压局' if high and low<=2
-                            else '黄金局' if not high and low<=4 else '未分类')
-                with self.subTest(high=high,low=low):
-                    self.assertEqual(lobby_type(room(low,high)),expected)
-        self.assertEqual(lobby_type(room(14)), '白银局')
-        players = room(2,1)
-        players[0]['rank_raw'] = [6,1,0]  # Black iron does not count as silver/bronze.
-        self.assertEqual(lobby_type(players),'高压局')
+        # Golden threshold is a count across both teams, not a low-rank proxy.
+        examples = [([3]*5+[6]*9,'低压局'),([3]*6+[6]*8,'黄金局'),
+                    ([3]*6+[4]*8,'黄金局'),([3]*14,'黄金局'),
+                    ([6]*14,'低压局'),([4]*7+[5]*7,'低压局')]
+        for high in (1,2):
+            examples.extend([([3]*13+[high],'高压局'),
+                             ([4]+[3]*12+[high],'高压局'),
+                             ([5]+[3]*12+[high],'高压局'),
+                             ([4,5]+[3]*11+[high],'低压局'),
+                             ([4]*13+[high],'低压局')])
+        for ranks,expected in examples:
+            with self.subTest(ranks=ranks):
+                self.assertEqual(lobby_type(room(ranks)),expected)
+        players = room([3]*14)
         for malformed in ([],players[:13],players+players[:1]):
             self.assertEqual(lobby_type(malformed),'未知')
-        for rank,qualification in ((None,False),([0,1,0],False),([3,1,0],True)):
-            players = room(6)
-            players[-1].update(rank_raw=rank,qualification=qualification)
+        for rank in (None,[0,1,0]):
+            players = room([3]*14)
+            players[-1].update(rank_raw=rank)
             self.assertEqual(lobby_type(players),'未知')
+
+    def test_lobby_skips_qualification_in_every_count(self):
+        def classify(ranks,skipped):
+            return lobby_type([dict(rank_raw=[rank,1,0] if rank else None,
+                                    qualification=i in skipped) for i,rank in enumerate(ranks)])
+        # Skipping the high rank allows gold; skipping bronze allows high pressure.
+        self.assertEqual(classify([1]+[3]*6+[6]*7,{0}),'黄金局')
+        self.assertEqual(classify([2,4,5]+[3]*11,{1}),'高压局')
+        # Skipping the sixth gold falls below the room-wide threshold.
+        self.assertEqual(classify([3]*6+[6]*8,{0}),'低压局')
+        self.assertEqual(classify([None]+[3]*6+[6]*7,{0}),'黄金局')
+        self.assertEqual(classify([None]*14,set(range(14))),'低压局')
 
     def test_lobby_replaces_five_dimensions_and_keeps_missing(self):
         dimensions = {d['key'] for d in self.data['dimensions']}
@@ -66,8 +78,13 @@ class ExplorerTests(unittest.TestCase):
         self.assertTrue(dimensions.isdisjoint({'self_rank','ally_ranks','enemy_ranks','allies_high','enemies_high'}))
         for row in self.data['records']:
             self.assertEqual(row['tags']['lobby_type'],lobby_type(row['players']))
+            self.assertIn(row['tags']['lobby_type'],{'高压局','黄金局','低压局','未知'})
             if not row['players']:
                 self.assertEqual(row['tags']['lobby_type'],'未知')
+        # All 42 formerly unknown rooms with qualification players are now classified.
+        qualified=[r for r in self.recent if any(p.get('qualification') for p in r['players'])]
+        self.assertEqual(len(qualified),42)
+        self.assertTrue(all(r['tags']['lobby_type']!='未知' for r in qualified))
 
     def test_full_scoreboard_is_numeric_and_matches_self(self):
         fields=[f['key'] for f in self.data['performance_fields']]

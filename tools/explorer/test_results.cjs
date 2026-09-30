@@ -63,5 +63,11 @@ assert.deepEqual(Array.from(legacy.filters),[{key:'map',values:['A']}]);
 assert.equal(legacy.metric,'prestige');
 const lobby=context.restoreState({...saved,dims:['lobby_type'],filters:[{key:'lobby_type',values:['高压局','黄金局']}]});
 assert.deepEqual(Array.from(lobby.filters),[{key:'lobby_type',values:['高压局','黄金局']}]);
+for(const retired of ['白银局','未分类']){
+  const migrated=context.restoreState({...saved,filters:[{key:'map',values:['A']},{key:'lobby_type',values:['黄金局',retired]}]});
+  assert.deepEqual(Array.from(migrated.filters),[{key:'map',values:['A']}]);
+}
+const lowPressure=context.restoreState({...saved,filters:[{key:'lobby_type',values:['低压局']}]});
+assert.deepEqual(Array.from(lowPressure.filters),[{key:'lobby_type',values:['低压局']}]);
 assert.throws(()=>context.restoreState({...saved,dims:['bad']}));
 console.log('Result views: distributions, outcome means, excluded-group baselines, missing-last sorting and saved-view migration passed.');

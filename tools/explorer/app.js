@@ -8,6 +8,8 @@ const signed=n=>n==null?'—':(n>0?'+':'')+number(n);
 const resultName={win:'胜',loss:'负',draw:'平',unknown:'未知'};
 const dimension=k=>data.dimensions.find(d=>d.key===k);
 const RETIRED_RANK_DIMENSIONS=new Set(['self_rank','ally_ranks','enemy_ranks','allies_high','enemies_high']);
+const RETIRED_LOBBY_VALUES=new Set(['白银局','未分类']);
+const retiredFilter=f=>RETIRED_RANK_DIMENSIONS.has(f.key)||(f.key==='lobby_type'&&f.values.some(v=>RETIRED_LOBBY_VALUES.has(v)));
 const RESULTS={rating:{label:'积分变化',mean:'场均积分变化',format:signed},prestige:{label:'声望',mean:'平均声望',format:number},win:{label:'胜率',mean:'已知胜率',format:pct}};
 function defaultState(){return {metric:'rating',dims:['map'],filters:[],from:data.metadata.window_start.slice(0,10),to:data.metadata.cutoff.slice(0,10),min:0,sort:'result_asc',bounds:true};}
 function options(selected){return data.dimensions.map(d=>`<option value="${d.key}" ${d.key===selected?'selected':''}>${esc(d.label)}${d.kind==='战后'?' · 战后':''}</option>`).join('');}
@@ -64,7 +66,7 @@ function compareResults(a,b,metric,sort){
 function restoreState(saved){
   if(!saved||!Array.isArray(saved.dims)||!saved.dims.length||!Array.isArray(saved.filters)||saved.filters.some(f=>!Array.isArray(f.values)))throw Error('Invalid view');
   const dims=[...new Set(saved.dims.map(k=>RETIRED_RANK_DIMENSIONS.has(k)?'lobby_type':k))];
-  const filters=saved.filters.filter(f=>!RETIRED_RANK_DIMENSIONS.has(f.key));
+  const filters=saved.filters.filter(f=>!retiredFilter(f));
   if(dims.some(k=>!dimension(k))||filters.some(f=>!dimension(f.key)))throw Error('Invalid view');
   const metric=saved.metric??'win'; // Old saved views were explicitly about win rate.
   if(!Object.hasOwn(RESULTS,metric))throw Error('Invalid result');
@@ -185,7 +187,7 @@ function wire(){
   $('clear-group').onclick=()=>{selectedGroup=null;render();};
   $('close-detail').onclick=()=>$('detail').close();
   $('save-view').onclick=()=>{try{localStorage.setItem('onslaught-view-v1',JSON.stringify(state));$('view-status').textContent='已保存到此浏览器';}catch{$('view-status').textContent='此浏览器无法保存视图';}};
-  $('load-view').onclick=()=>{try{const saved=JSON.parse(localStorage.getItem('onslaught-view-v1'));state=restoreState(saved);selectedGroup=null;renderControls();render();$('view-status').textContent=saved.dims.concat(saved.filters.map(f=>f.key)).some(k=>RETIRED_RANK_DIMENSIONS.has(k))?'已恢复；旧分段分组改为局型，旧分段筛选已移除，请重新选择局型筛选。':'已恢复保存的视图';}catch{$('view-status').textContent='没有可恢复的视图';}};
+  $('load-view').onclick=()=>{try{const saved=JSON.parse(localStorage.getItem('onslaught-view-v1'));state=restoreState(saved);selectedGroup=null;renderControls();render();$('view-status').textContent=saved.dims.some(k=>RETIRED_RANK_DIMENSIONS.has(k))||saved.filters.some(retiredFilter)?'已恢复；分段标签已更新，过时筛选已移除，请重新选择局型筛选。':'已恢复保存的视图';}catch{$('view-status').textContent='没有可恢复的视图';}};
 }
 async function init(){try{const response=await fetch('/api/data');if(!response.ok)throw Error('数据读取失败');data=await response.json();state=defaultState();$('snapshot').textContent=`本地快照 · ${data.metadata.window_start.slice(0,10)} 至 ${data.metadata.cutoff.slice(0,10)} · ${data.metadata.recent_count} 场`;$('startup-message').textContent=data.metadata.startup_message||'';$('startup-message').hidden=!data.metadata.startup_message;wire();renderControls();render();}catch(error){$('error').hidden=false;$('error').textContent='加载失败：'+error.message;}}
 init();
