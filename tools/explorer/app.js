@@ -7,6 +7,7 @@ const number=n=>n==null?'—':Number(n).toLocaleString('zh-CN',{maximumFractionD
 const signed=n=>n==null?'—':(n>0?'+':'')+number(n);
 const resultName={win:'胜',loss:'负',draw:'平',unknown:'未知'};
 const dimension=k=>data.dimensions.find(d=>d.key===k);
+const RETIRED_RANK_DIMENSIONS=new Set(['self_rank','ally_ranks','enemy_ranks','allies_high','enemies_high']);
 const RESULTS={rating:{label:'积分变化',mean:'场均积分变化',format:signed},prestige:{label:'声望',mean:'平均声望',format:number},win:{label:'胜率',mean:'已知胜率',format:pct}};
 function defaultState(){return {metric:'rating',dims:['map'],filters:[],from:data.metadata.window_start.slice(0,10),to:data.metadata.cutoff.slice(0,10),min:0,sort:'result_asc',bounds:true};}
 function options(selected){return data.dimensions.map(d=>`<option value="${d.key}" ${d.key===selected?'selected':''}>${esc(d.label)}${d.kind==='战后'?' · 战后':''}</option>`).join('');}
@@ -61,12 +62,15 @@ function compareResults(a,b,metric,sort){
   return (sort==='result_desc'?bv-av:av-bv)||bm.count-am.count;
 }
 function restoreState(saved){
-  if(!saved||!Array.isArray(saved.dims)||!saved.dims.length||saved.dims.some(k=>!dimension(k))||!Array.isArray(saved.filters)||saved.filters.some(f=>!dimension(f.key)||!Array.isArray(f.values)))throw Error('Invalid view');
+  if(!saved||!Array.isArray(saved.dims)||!saved.dims.length||!Array.isArray(saved.filters)||saved.filters.some(f=>!Array.isArray(f.values)))throw Error('Invalid view');
+  const dims=[...new Set(saved.dims.map(k=>RETIRED_RANK_DIMENSIONS.has(k)?'lobby_type':k))];
+  const filters=saved.filters.filter(f=>!RETIRED_RANK_DIMENSIONS.has(f.key));
+  if(dims.some(k=>!dimension(k))||filters.some(f=>!dimension(f.key)))throw Error('Invalid view');
   const metric=saved.metric??'win'; // Old saved views were explicitly about win rate.
   if(!Object.hasOwn(RESULTS,metric))throw Error('Invalid result');
   const sort=saved.sort==='win_rate'?'result_asc':saved.sort??'result_asc';
   if(!['result_asc','result_desc','total','unknown','name','estimated'].includes(sort)||(sort==='estimated'&&metric!=='win'))throw Error('Invalid sort');
-  return {...defaultState(),...saved,metric,sort};
+  return {...defaultState(),...saved,dims,filters,metric,sort};
 }
 function renderResultControls(){
   const config=RESULTS[state.metric],isWin=state.metric==='win';
@@ -164,7 +168,7 @@ function showDetail(r){
   const participants=side=>{
     return participantsTable(r,side);
   };
-  $('detail-body').innerHTML=`<h2>${esc(r.tags.map)} · ${esc(r.tags.vehicle)}</h2><p class="hint">${esc(r.started_at.replace('T',' '))} · ${esc(r.tags.side)} · ${resultName[r.result]}${!r.vehicle?' · 车辆来自文件头，未用战报复核':''}</p><div class="tag-list">${['vehicle_class','self_rank','completeness','recording_end'].map(k=>`<span>${esc(dimension(k).label)}：${esc(r.tags[k])}</span>`).join('')}</div>${r.result==='unknown'?'<div class="note">最终结果未知。阵亡与提前结束录制均不等于整场失败；缺失的伤害、积分或分段也不是 0。</div>':''}<div class="detail-grid"><div class="detail-card"><h3>个人表现与积分</h3><dl class="stat-list">${metrics.map(([k,v])=>`<div><dt>${k}</dt><dd>${k==='积分变化'?signed(v):number(v)}</dd></div>`).join('')}</dl></div><div class="detail-card"><h3>录制时间线</h3><p class="hint">以下均为录像内秒数；事件来自实际数据包。</p><div class="timeline">${timeline.length?timeline.sort((a,b)=>a[0]-b[0]).map(([t,s])=>`<p><b>${t.toFixed(1)}s</b>${s}</p>`).join(''):'<p class="hint">此场未做二进制调查。</p>'}</div>${event?.seconds_from_death_to_end!=null?`<p class="hint">阵亡后继续记录 ${event.seconds_from_death_to_end.toFixed(1)} 秒。</p>`:''}${event?.seconds_end_to_next_start!=null?`<p class="hint">下一场录像约在结束后 ${event.seconds_end_to_next_start.toFixed(0)} 秒开始。</p>`:''}</div></div><h3>全场赛后战报 · ${r.players.length?r.players.length+' 人':'未记录'}</h3><p class="hint">双方按声望从高到低排列，本人高亮。全员 19 项汇总来自最终战报；不代表全员完整位置或事件轨迹。精确积分变化仅本人可见。声望保留原值，可超过 200。</p><section class="team-report"><h3>我方 · 含本人</h3>${participants(true)}</section><section class="team-report"><h3>对方</h3>${participants(false)}</section><h3>原始录像与追溯</h3><p class="path">${esc(r.replay_path)}</p><p class="hint">SHA-256：${esc(r.sha256)}<br>出生点配置坐标：${esc(JSON.stringify(r.spawn_points))}；这是队伍配置点，不是实测轨迹。</p><div class="detail-actions"><button id="copy-path">复制录像路径</button><a class="download" href="/replay/${encodeURIComponent(r.id)}" download>下载原始录像</a></div>`;
+  $('detail-body').innerHTML=`<h2>${esc(r.tags.map)} · ${esc(r.tags.vehicle)}</h2><p class="hint">${esc(r.started_at.replace('T',' '))} · ${esc(r.tags.side)} · ${resultName[r.result]}${!r.vehicle?' · 车辆来自文件头，未用战报复核':''}</p><div class="tag-list">${['vehicle_class','lobby_type','completeness','recording_end'].map(k=>`<span>${esc(dimension(k).label)}：${esc(r.tags[k])}</span>`).join('')}</div>${r.result==='unknown'?'<div class="note">最终结果未知。阵亡与提前结束录制均不等于整场失败；缺失的伤害、积分或分段也不是 0。</div>':''}<div class="detail-grid"><div class="detail-card"><h3>个人表现与积分</h3><dl class="stat-list">${metrics.map(([k,v])=>`<div><dt>${k}</dt><dd>${k==='积分变化'?signed(v):number(v)}</dd></div>`).join('')}</dl></div><div class="detail-card"><h3>录制时间线</h3><p class="hint">以下均为录像内秒数；事件来自实际数据包。</p><div class="timeline">${timeline.length?timeline.sort((a,b)=>a[0]-b[0]).map(([t,s])=>`<p><b>${t.toFixed(1)}s</b>${s}</p>`).join(''):'<p class="hint">此场未做二进制调查。</p>'}</div>${event?.seconds_from_death_to_end!=null?`<p class="hint">阵亡后继续记录 ${event.seconds_from_death_to_end.toFixed(1)} 秒。</p>`:''}${event?.seconds_end_to_next_start!=null?`<p class="hint">下一场录像约在结束后 ${event.seconds_end_to_next_start.toFixed(0)} 秒开始。</p>`:''}</div></div><h3>全场赛后战报 · ${r.players.length?r.players.length+' 人':'未记录'}</h3><p class="hint">双方按声望从高到低排列，本人高亮。全员 19 项汇总来自最终战报；不代表全员完整位置或事件轨迹。精确积分变化仅本人可见。声望保留原值，可超过 200。</p><section class="team-report"><h3>我方 · 含本人</h3>${participants(true)}</section><section class="team-report"><h3>对方</h3>${participants(false)}</section><h3>原始录像与追溯</h3><p class="path">${esc(r.replay_path)}</p><p class="hint">SHA-256：${esc(r.sha256)}<br>出生点配置坐标：${esc(JSON.stringify(r.spawn_points))}；这是队伍配置点，不是实测轨迹。</p><div class="detail-actions"><button id="copy-path">复制录像路径</button><a class="download" href="/replay/${encodeURIComponent(r.id)}" download>下载原始录像</a></div>`;
   $('copy-path').onclick=async()=>{try{await navigator.clipboard.writeText(r.replay_path);$('copy-path').textContent='路径已复制';}catch{$('copy-path').textContent='请在上方选中路径复制';}};
   $('detail').showModal();
 }
@@ -181,7 +185,7 @@ function wire(){
   $('clear-group').onclick=()=>{selectedGroup=null;render();};
   $('close-detail').onclick=()=>$('detail').close();
   $('save-view').onclick=()=>{try{localStorage.setItem('onslaught-view-v1',JSON.stringify(state));$('view-status').textContent='已保存到此浏览器';}catch{$('view-status').textContent='此浏览器无法保存视图';}};
-  $('load-view').onclick=()=>{try{const saved=JSON.parse(localStorage.getItem('onslaught-view-v1'));state=restoreState(saved);selectedGroup=null;renderControls();render();$('view-status').textContent='已恢复保存的视图';}catch{$('view-status').textContent='没有可恢复的视图';}};
+  $('load-view').onclick=()=>{try{const saved=JSON.parse(localStorage.getItem('onslaught-view-v1'));state=restoreState(saved);selectedGroup=null;renderControls();render();$('view-status').textContent=saved.dims.concat(saved.filters.map(f=>f.key)).some(k=>RETIRED_RANK_DIMENSIONS.has(k))?'已恢复；旧分段分组改为局型，旧分段筛选已移除，请重新选择局型筛选。':'已恢复保存的视图';}catch{$('view-status').textContent='没有可恢复的视图';}};
 }
 async function init(){try{const response=await fetch('/api/data');if(!response.ok)throw Error('数据读取失败');data=await response.json();state=defaultState();$('snapshot').textContent=`本地快照 · ${data.metadata.window_start.slice(0,10)} 至 ${data.metadata.cutoff.slice(0,10)} · ${data.metadata.recent_count} 场`;$('startup-message').textContent=data.metadata.startup_message||'';$('startup-message').hidden=!data.metadata.startup_message;wire();renderControls();render();}catch(error){$('error').hidden=false;$('error').textContent='加载失败：'+error.message;}}
 init();

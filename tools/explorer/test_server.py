@@ -1,7 +1,7 @@
 import json
 import unittest
 from collections import Counter
-from server import build_data,rank_label,prestige_band,rating_band
+from server import build_data,rank_label,prestige_band,rating_band,lobby_type
 
 
 class ExplorerTests(unittest.TestCase):
@@ -34,6 +34,40 @@ class ExplorerTests(unittest.TestCase):
 
     def test_qualification_not_fake_rating(self):
         self.assertEqual(rank_label({'rank_raw':[3,1,19],'qualification':True}),'定级赛')
+
+    def test_lobby_boundaries_and_full_room_count(self):
+        def room(low, high=None):
+            # Self is the last player; both sides contain low-rank players.
+            ranks = [4 if i % 2 else 5 for i in range(low)] + [3] * (14-low)
+            if high is not None:
+                ranks[-1] = high
+            return [dict(rank_raw=[rank,1,0],is_self=i==13,is_ally=i>=7)
+                    for i,rank in enumerate(ranks)]
+        for high in (None,1,2):
+            for low in range(14):
+                expected = ('白银局' if low>=6 else '高压局' if high and low<=2
+                            else '黄金局' if not high and low<=4 else '未分类')
+                with self.subTest(high=high,low=low):
+                    self.assertEqual(lobby_type(room(low,high)),expected)
+        self.assertEqual(lobby_type(room(14)), '白银局')
+        players = room(2,1)
+        players[0]['rank_raw'] = [6,1,0]  # Black iron does not count as silver/bronze.
+        self.assertEqual(lobby_type(players),'高压局')
+        for malformed in ([],players[:13],players+players[:1]):
+            self.assertEqual(lobby_type(malformed),'未知')
+        for rank,qualification in ((None,False),([0,1,0],False),([3,1,0],True)):
+            players = room(6)
+            players[-1].update(rank_raw=rank,qualification=qualification)
+            self.assertEqual(lobby_type(players),'未知')
+
+    def test_lobby_replaces_five_dimensions_and_keeps_missing(self):
+        dimensions = {d['key'] for d in self.data['dimensions']}
+        self.assertIn('lobby_type',dimensions)
+        self.assertTrue(dimensions.isdisjoint({'self_rank','ally_ranks','enemy_ranks','allies_high','enemies_high'}))
+        for row in self.data['records']:
+            self.assertEqual(row['tags']['lobby_type'],lobby_type(row['players']))
+            if not row['players']:
+                self.assertEqual(row['tags']['lobby_type'],'未知')
 
     def test_full_scoreboard_is_numeric_and_matches_self(self):
         fields=[f['key'] for f in self.data['performance_fields']]

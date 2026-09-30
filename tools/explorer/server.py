@@ -8,7 +8,7 @@ import subprocess
 import sys
 import tempfile
 import webbrowser
-from collections import Counter, defaultdict
+from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -19,7 +19,7 @@ ASSETS = Path(__file__).resolve().parent
 EVIDENCE = ROOT/'DOCS/status/evidence/2026-09-30-replay-audit'
 sys.path.insert(0, str(ROOT / 'tools/replay_analysis'))
 from sync_replays import DEFAULT_SOURCE, sync_replays
-RANKS = {1:'传奇', 2:'冠军', 3:'黄金', 4:'白银', 5:'青铜', 6:'黑铁'}
+RANKS = {1:'传说', 2:'勇士', 3:'黄金', 4:'白银', 5:'青铜', 6:'黑铁'}
 CLASSES = {'heavyTank':'重坦','mediumTank':'中坦','lightTank':'轻坦','AT-SPG':'坦歼','SPG':'火炮'}
 NUMBERS = {'team','header_team','rating_before','rating_after','rating_delta','duration','health',
            'damageDealt','damageAssistedRadio','damageAssistedTrack','damageAssistedStun',
@@ -81,12 +81,23 @@ def rank_label(player, detailed=True):
     return RANKS[rank[0]] + suffix
 
 
-def composition(players):
-    if not players:
+def lobby_type(players):
+    # A room includes both teams and self. Qualification is not a known rank.
+    if len(players) != 14 or any(
+        p.get('qualification') or not p.get('rank_raw') or p['rank_raw'][0] not in RANKS
+        for p in players
+    ):
         return '未知'
-    counts = Counter(rank_label(p,False) for p in players)
-    order = list(RANKS.values())+['定级赛','未知']
-    return ' · '.join(f'{rank}×{counts[rank]}' for rank in order if counts[rank])
+    ranks = [p['rank_raw'][0] for p in players]
+    low = sum(rank in (4, 5) for rank in ranks)
+    high = any(rank in (1, 2) for rank in ranks)
+    if low >= 6:
+        return '白银局'
+    if high and low <= 2:
+        return '高压局'
+    if not high and low <= 4:
+        return '黄金局'
+    return '未分类'
 
 
 def build_data(evidence=EVIDENCE, investigation_evidence=None):
@@ -113,26 +124,17 @@ def build_data(evidence=EVIDENCE, investigation_evidence=None):
         if b.get('duplicate'):
             continue
         party = grouped[b['file']]
-        own = next((p for p in party if p['is_self']),{})
-        allies = [p for p in party if p['is_ally'] and not p['is_self']]
-        enemies = [p for p in party if not p['is_ally']]
         vehicle = b.get('vehicle') or b['header_vehicle']
         cls = b.get('vehicle_class') or classes.get(vehicle)
         event = events.get(b['file'])
         death_state = ('阵亡后结束 / 无结算' if event and event['death_clock'] is not None and not event['has_afterbattle']
                        else '已记录结算' if b['result']!='unknown' else '未确定')
-        def count_high(team):
-            if not team or any(not p.get('rank_raw') or p.get('qualification') for p in team):
-                return '未知 / 含定级'
-            return str(sum(1<=p['rank_raw'][0]<=3 for p in team))+'人'
         damage=b.get('damageDealt')
         b.update(id=b['sha256'], players=party, investigation=event,
                  replay_path=str(ROOT/'replays'/b['file']),
                  tags=dict(map=b['map_name'],side=f"队伍 {int(b['team'])}" if b.get('team') else '未知',
                            vehicle=vehicle.split(':')[-1],vehicle_class=CLASSES.get(cls,'未知'),
-                           day=b['started_at'][:10],self_rank=rank_label(own),
-                           ally_ranks=composition(allies),enemy_ranks=composition(enemies),
-                           allies_high=count_high(allies),enemies_high=count_high(enemies),
+                           day=b['started_at'][:10],lobby_type=lobby_type(party),
                            result={'win':'胜','loss':'负','draw':'平','unknown':'未知'}[b['result']],
                            completeness='有战报' if b['result_status']=='valid' else '无战报' if b['result_status']=='no_result_block' else '战报异常',
                            recording_end=death_state,
@@ -143,8 +145,7 @@ def build_data(evidence=EVIDENCE, investigation_evidence=None):
                            rating_band=rating_band(b.get('rating_delta'))))
         records.append(b)
     dimensions=[('map','地图','赛前'),('side','出生队伍','赛前'),('vehicle','具体坦克','赛前'),('vehicle_class','车辆类别','赛前'),
-                ('day','日期','时间'),('self_rank','本人分段','赛前'),('ally_ranks','六名队友分段构成','赛前'),
-                ('enemy_ranks','七名对手分段构成','赛前'),('allies_high','队友黄金及以上人数','赛前'),('enemies_high','对手黄金及以上人数','赛前'),
+                ('day','日期','时间'),('lobby_type','局型','赛前'),
                 ('damage_band','伤害区间','战后'),('prestige_band','本人声望区间','战后'),
                 ('rating_band','本人积分变化区间','战后'),('survival','最终存活状态','战后'),('result','战斗结果','战后'),
                 ('completeness','战报完整性','数据质量'),('recording_end','录制结束状态','数据质量'),('observed_death','本人阵亡（录像观测）','战后')]
