@@ -1,7 +1,7 @@
 import json
 import unittest
 from collections import Counter
-from server import build_data,rank_label
+from server import build_data,rank_label,prestige_band,rating_band
 
 
 class ExplorerTests(unittest.TestCase):
@@ -34,6 +34,37 @@ class ExplorerTests(unittest.TestCase):
 
     def test_qualification_not_fake_rating(self):
         self.assertEqual(rank_label({'rank_raw':[3,1,19],'qualification':True}),'定级赛')
+
+    def test_full_scoreboard_is_numeric_and_matches_self(self):
+        fields=[f['key'] for f in self.data['performance_fields']]
+        self.assertEqual(len(fields),19)
+        for row in self.data['records']:
+            if row['result_status']!='valid':
+                self.assertIsNone(row['comp7PrestigePoints'])
+                self.assertIsNone(row['rating_delta'])
+                self.assertEqual(row['tags']['prestige_band'],'未知')
+                continue
+            own=next(p for p in row['players'] if p['is_self'])
+            for key in fields:
+                self.assertEqual(row[key],own[key])
+                for player in row['players']:
+                    self.assertIsInstance(player[key],(int,float))
+            # Other players' exact rating is not supplied by these replays.
+            self.assertTrue(all('rating_delta' not in p for p in row['players']))
+
+    def test_prestige_is_not_capped_at_200(self):
+        values=[r['comp7PrestigePoints'] for r in self.data['records'] if r['result_status']=='valid']
+        self.assertEqual(max(values),242)
+        self.assertEqual(sum(v>200 for v in values),9)
+
+    def test_metric_bands_preserve_zero_missing_and_boundaries(self):
+        for value,expected in [(None,'未知'),(0,'<80'),(79,'<80'),(80,'80–109'),
+                               (110,'110–139'),(140,'140–199'),(200,'≥200'),(242,'≥200')]:
+            self.assertEqual(prestige_band(value),expected)
+        self.assertEqual(rating_band(None),'未知')
+        self.assertEqual(rating_band(0),'0')
+        self.assertEqual(rating_band(-46),'<−30')
+        self.assertEqual(rating_band(46),'>+30')
 
 
 if __name__=='__main__':

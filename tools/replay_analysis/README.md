@@ -29,6 +29,9 @@ Files:
 - `stream_audit.py`: decrypt/decompress then inspect packet framing, phase values and
   result-packet presence; no pickle execution, event simulation or outcome inference.
 - `client_evidence.py`: selected Python 2.7 bytecode disassembly, never import/execute game code.
+- `field_inventory.py`: verify replay hashes and cross-check all 19 participant metrics plus
+  self rating against the CSV snapshot; report field coverage and observed prestige/rating
+  distributions without names or account IDs. Run with `--output <report.json>`.
 
 Important: `spawn_points` is the **map configuration**, not the actual vehicle position.
 Header-only vehicles are not promoted to confirmed final vehicles. Rank is categorical;

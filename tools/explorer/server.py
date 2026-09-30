@@ -18,9 +18,31 @@ CLASSES = {'heavyTank':'重坦','mediumTank':'中坦','lightTank':'轻坦','AT-S
 NUMBERS = {'team','header_team','rating_before','rating_after','rating_delta','duration','health',
            'damageDealt','damageAssistedRadio','damageAssistedTrack','damageAssistedStun',
            'damageBlockedByArmor','damageReceived','kills','lifeTime','maxHealth','shots',
-           'piercings','comp7PrestigePoints','roleSkillUsed','capturePoints','level'}
+           'piercings','comp7PrestigePoints','roleSkillUsed','capturePoints','level',
+           'damageAssistedInspire','directHits','droppedCapturePoints','poiCapturedByOwnTeam'}
 JSON_FIELDS = {'rank_raw','ally_ranks','enemy_ranks','spawn_points','rank_rating_range'}
 BOOLS = {'in_window','duplicate','is_self','is_ally','qualification','premature_leave','watched_to_end'}
+PERFORMANCE_FIELDS = [
+    ('comp7PrestigePoints','声望'), ('damageDealt','伤害'), ('kills','击杀'),
+    ('damageAssistedRadio','侦查协助'), ('damageAssistedTrack','断带协助'),
+    ('damageBlockedByArmor','格挡'), ('roleSkillUsed','技能使用'),
+    ('damageAssistedInspire','激励协助'), ('damageAssistedStun','眩晕协助'),
+    ('damageReceived','承伤'), ('health','剩余血量'), ('maxHealth','最大血量'),
+    ('lifeTime','生存秒数'), ('shots','射击'), ('directHits','直接命中'),
+    ('piercings','穿透'), ('capturePoints','占领点数'),
+    ('droppedCapturePoints','防守点数'), ('poiCapturedByOwnTeam','本队战略点占领')]
+
+
+def prestige_band(value):
+    if value is None:
+        return '未知'
+    return '<80' if value < 80 else '80–109' if value < 110 else '110–139' if value < 140 else '140–199' if value < 200 else '≥200'
+
+
+def rating_band(value):
+    if value is None:
+        return '未知'
+    return '<−30' if value < -30 else '−30～−16' if value < -15 else '−15～−1' if value < 0 else '0' if value == 0 else '+1～+15' if value <= 15 else '+16～+30' if value <= 30 else '>+30'
 
 
 def load_csv(path):
@@ -105,15 +127,19 @@ def build_data(evidence=EVIDENCE):
                            recording_end=death_state,
                            observed_death='已观测阵亡' if event and event['death_clock'] is not None else '未观测阵亡' if event else '未调查',
                            damage_band='未知' if damage is None else '<2000' if damage<2000 else '2000–3999' if damage<4000 else '≥4000',
-                           survival='未知' if b.get('health') is None else '存活' if b['health']>0 else '阵亡'))
+                           survival='未知' if b.get('health') is None else '存活' if b['health']>0 else '阵亡',
+                           prestige_band=prestige_band(b.get('comp7PrestigePoints')),
+                           rating_band=rating_band(b.get('rating_delta'))))
         records.append(b)
     dimensions=[('map','地图','赛前'),('side','出生队伍','赛前'),('vehicle','具体坦克','赛前'),('vehicle_class','车辆类别','赛前'),
                 ('day','日期','时间'),('self_rank','本人分段','赛前'),('ally_ranks','六名队友分段构成','赛前'),
                 ('enemy_ranks','七名对手分段构成','赛前'),('allies_high','队友黄金及以上人数','赛前'),('enemies_high','对手黄金及以上人数','赛前'),
-                ('damage_band','伤害区间','战后'),('survival','最终存活状态','战后'),('result','战斗结果','战后'),
+                ('damage_band','伤害区间','战后'),('prestige_band','本人声望区间','战后'),
+                ('rating_band','本人积分变化区间','战后'),('survival','最终存活状态','战后'),('result','战斗结果','战后'),
                 ('completeness','战报完整性','数据质量'),('recording_end','录制结束状态','数据质量'),('observed_death','本人阵亡（录像观测）','战后')]
     return dict(metadata={k:audit[k] for k in ('cutoff','window_start','recent_count','recent_results')},
                 dimensions=[dict(key=k,label=l,kind=t) for k,l,t in dimensions], records=records,
+                performance_fields=[dict(key=k,label=l) for k,l in PERFORMANCE_FIELDS],
                 investigation_summary=forensic.get('summary'),control_validation=forensic.get('control_validation'))
 
 
