@@ -75,4 +75,37 @@ vm.runInContext("data.records=[{tags:{day:'2026-09-29',lobby_type:'其它'}},{ta
 assert.equal(context.filtered().length,1);
 assert.equal(context.filtered()[0].tags.lobby_type,'其它');
 assert.throws(()=>context.restoreState({...saved,dims:['bad']}));
+
+// Performance averages use their own observed battles, even without rating data.
+const performance=group('["表现组"]',[
+  {result:'win',rating_delta:10,comp7PrestigePoints:100,damageDealt:3000},
+  {result:'loss',rating_delta:-10,comp7PrestigePoints:200,damageDealt:0},
+  {result:'unknown',rating_delta:null,comp7PrestigePoints:300,damageDealt:1500},
+  {result:'unknown',comp7PrestigePoints:null,damageDealt:null},
+  {result:'unknown',comp7PrestigePoints:NaN,damageDealt:Infinity}
+]);
+assert.equal(performance.prestige.mean,200);
+assert.equal(performance.damage.mean,1500);
+assert.equal(performance.damage.count,3);
+assert.equal(empty.damage.mean,null);
+const nodes=new Map();
+context.document={getElementById:id=>{
+  if(!nodes.has(id))nodes.set(id,{innerHTML:'',classList:{toggle(){}}});
+  return nodes.get(id);
+}};
+for(const metric of ['rating','prestige']){
+  vm.runInContext(`state.metric='${metric}'`,context);
+  context.renderGroupTable([performance,{...empty,key:'["未知"]'}],performance);
+  const headers=nodes.get('group-head').innerHTML;
+  assert.ok(headers.endsWith('<th >平均声望</th><th >平均输出</th>'));
+  assert.ok(!headers.includes('相对其余均值差')&&!headers.includes('缺失'));
+  const html=nodes.get('groups').innerHTML;
+  assert.ok(html.includes('本人声望；有值 3 / 5 场">200</td>'));
+  assert.ok(html.includes('本人造成的伤害；有值 3 / 5 场">1,500</td>'));
+  assert.ok(html.includes('本人造成的伤害；有值 0 / 1 场">—</td>'));
+}
+vm.runInContext("state.metric='win'",context);
+context.renderGroupTable([performance],performance);
+assert.ok(nodes.get('group-head').innerHTML.includes('相对其余胜率差'));
+assert.ok(!nodes.get('group-head').innerHTML.includes('平均输出'));
 console.log('Result views: distributions, outcome means, excluded-group baselines, missing-last sorting and saved-view migration passed.');
