@@ -50,6 +50,23 @@ class SyncTests(unittest.TestCase):
         self.assertEqual((report['copied'], report['ignored']), (1, 1))
         self.assertTrue((self.source/'Onslaught_regular.wotreplay').exists())
 
+    def test_non_onslaught_headers_never_reach_copy(self):
+        headers = [
+            dict(gameplayID='ctf', battleType=1),
+            dict(gameplayID='comp7', battleType=1),
+            dict(gameplayID='ctf', battleType=43),
+            dict(gameplayID=None),
+            dict(battleType=None),
+        ]
+        for i, fields in enumerate(headers):
+            self.replay(f'Onslaught_{i}.wotreplay', **fields)
+        with patch('sync_replays.shutil.copy2') as copy:
+            report = self.sync()
+        copy.assert_not_called()
+        self.assertEqual(report, dict(copied=0, existing=0, ignored=5, pending=0, conflicts=[], errors=[]))
+        self.assertFalse(self.destination.exists())
+        self.assertEqual(len(list(self.source.glob('*.wotreplay'))), 5)
+
     def test_conflicting_file_is_never_overwritten(self):
         self.replay()
         self.sync()

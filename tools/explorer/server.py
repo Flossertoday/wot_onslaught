@@ -126,7 +126,8 @@ def build_data(evidence=EVIDENCE, investigation_evidence=None):
         cls = b.get('vehicle_class') or classes.get(vehicle)
         event = events.get(b['file'])
         death_state = ('阵亡后结束 / 无结算' if event and event['death_clock'] is not None and not event['has_afterbattle']
-                       else '已记录结算' if b['result']!='unknown' else '未确定')
+                       else '已记录结算' if b['result']!='unknown'
+                       else '假设提前离场 / 无战报' if b['result_status']=='no_result_block' else '未确定')
         damage=b.get('damageDealt')
         b.update(id=b['sha256'], players=party, investigation=event,
                  replay_path=str(ROOT/'replays'/b['file']),
@@ -158,7 +159,7 @@ def load_startup_data(source=DEFAULT_SOURCE, game=DEFAULT_SOURCE.parent):
     if source is not None:
         report = sync_replays(source, ROOT/'replays')
         messages.append(f"录像同步：新增 {report['copied']}，已有 {report['existing']}，"
-                        f"普通模式 {report['ignored']}，待完成 {report['pending']}，"
+                        f"已跳过非天梯 {report['ignored']}，待完成 {report['pending']}，"
                         f"冲突 {len(report['conflicts'])}，错误 {len(report['errors'])}。")
         print(json.dumps(report, ensure_ascii=True), flush=True)
         if report['conflicts'] or report['errors']:
