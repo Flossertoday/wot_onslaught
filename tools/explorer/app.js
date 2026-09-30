@@ -9,6 +9,22 @@ const resultName={win:'胜',loss:'负',draw:'平',unknown:'未知'};
 const dimension=k=>data.dimensions.find(d=>d.key===k);
 const RESULTS={rating:{label:'积分变化',mean:'场均积分变化',format:signed},prestige:{label:'声望',mean:'平均声望',format:number},win:{label:'胜率',mean:'已知胜率',format:pct}};
 function defaultState(){return {metric:'rating',dims:['map'],filters:[],from:data.metadata.window_start.slice(0,10),to:data.metadata.cutoff.slice(0,10),min:0,sort:'result_asc',bounds:true};}
+// Replay calendar dates follow the server's UTC+08 convention.
+function datePresetRange(preset,now=new Date()){
+  const offsets={today:[0,0],yesterday:[1,1],beforeYesterday:[2,2],threeDays:[2,0],sevenDays:[6,0]}[preset];
+  if(!offsets)throw Error('未知日期快捷选项');
+  const today=new Date(now.getTime()+8*60*60*1000);
+  const day=offset=>{const date=new Date(today);date.setUTCDate(date.getUTCDate()-offset);return date.toISOString().slice(0,10);};
+  return {from:day(offsets[0]),to:day(offsets[1])};
+}
+function renderDateControls(){
+  $('date-from').value=state.from;$('date-to').value=state.to;
+  const now=new Date();
+  document.querySelectorAll('[data-date-preset]').forEach(button=>{
+    const range=datePresetRange(button.dataset.datePreset,now);
+    button.setAttribute('aria-pressed',String(state.from===range.from&&state.to===range.to));
+  });
+}
 function options(selected){return data.dimensions.map(d=>`<option value="${d.key}" ${d.key===selected?'selected':''}>${esc(d.label)}${d.kind==='战后'?' · 战后':''}</option>`).join('');}
 function renderControls(){
   $('dimensions').innerHTML=state.dims.map((d,i)=>`<div class="dim-row"><select aria-label="分组标签 ${i+1}" data-dim="${i}">${options(d)}</select><button aria-label="删除分组标签 ${i+1}" data-remove-dim="${i}" ${state.dims.length===1?'disabled':''}>×</button></div>`).join('');
@@ -22,7 +38,7 @@ function renderControls(){
   document.querySelectorAll('[data-filter-values]').forEach(el=>el.onchange=()=>{state.filters[+el.dataset.filterValues].values=[...el.selectedOptions].map(o=>o.value);selectedGroup=null;render();});
   document.querySelectorAll('[data-remove-filter]').forEach(el=>el.onclick=()=>{state.filters.splice(+el.dataset.removeFilter,1);selectedGroup=null;renderControls();render();});
   renderResultControls();
-  $('date-from').value=state.from;$('date-to').value=state.to;$('min-count').value=state.min;$('sort').value=state.sort;$('bounds').checked=state.bounds;
+  renderDateControls();$('min-count').value=state.min;$('sort').value=state.sort;$('bounds').checked=state.bounds;
 }
 function filtered(){return data.records.filter(r=>(!state.from||r.tags.day>=state.from)&&(!state.to||r.tags.day<=state.to)&&state.filters.every(f=>!f.values.length||f.values.includes(r.tags[f.key])));}
 function metricStats(rows,key){
@@ -121,6 +137,7 @@ function renderGroupTable(list,all){
   }).join(''):'<tr><td colspan="8" class="empty">没有符合条件的分组。试着放宽筛选或降低最小有值场数。</td></tr>';
 }
 function render(){
+  renderDateControls();
   const rows=filtered(),all=stats(rows),groups=new Map();
   for(const r of rows){const key=JSON.stringify(state.dims.map(d=>r.tags[d]));if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);}
   const list=[...groups.entries()].map(([key,rows])=>({key,rows,...stats(rows)})).filter(g=>resultSummary(g,state.metric).count>=state.min);
@@ -169,6 +186,9 @@ function showDetail(r){
   $('detail').showModal();
 }
 function wire(){
+  document.querySelectorAll('[data-date-preset]').forEach(button=>button.onclick=()=>{
+    Object.assign(state,datePresetRange(button.dataset.datePreset));selectedGroup=null;render();
+  });
   document.querySelectorAll('[data-result]').forEach(button=>button.onclick=()=>{state.metric=button.dataset.result;state.sort='result_asc';renderResultControls();render();});
   $('controls-toggle').onclick=()=>{const open=$('controls').classList.toggle('expanded');$('controls-toggle').setAttribute('aria-expanded',String(open));$('controls-toggle').textContent=open?'收起标签与筛选':'展开标签与筛选';};
   $('add-dimension').onclick=()=>{const next=data.dimensions.find(d=>!state.dims.includes(d.key));if(next){state.dims.push(next.key);selectedGroup=null;renderControls();render();}};
