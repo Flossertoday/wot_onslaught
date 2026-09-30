@@ -20,6 +20,10 @@ output directory so the checked-in historical evidence is retained.
 
 Files:
 
+- `sync_replays.py`: copy completed Onslaught replays from the game's replay directory into
+  map folders. Standard library only; source files are untouched, identical destinations
+  are skipped, conflicts are reported without overwriting. Run directly or let Explorer
+  call it at startup. See [Explorer usage](../explorer/README.md).
 - `audit.py`: read bounded JSON blocks; validate identities/teams/vehicle/time; classify
   missing or invalid results; resolve map spawn and vehicle class definitions; export CSV
   and exploratory map summaries. Error records are preserved and the command fails if any

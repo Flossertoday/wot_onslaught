@@ -98,7 +98,7 @@ function renderOverview(all){
   ];
   $('kpis').innerHTML=cards.map(([label,value,hint],i)=>`<div class="kpi ${i===0?'primary-kpi':''}"><small>${label}</small><strong>${value}</strong><span>${hint}</span></div>`).join('');
   $('scenario-note').hidden=!isWin;
-  $('scenario-note').textContent='按你的估计：78 场提前结束录像的胜率取 30%。估计胜率 =（已知胜场 + 提前结束场数 × 30%）÷ 总场数。筛选后的各组也统一按 30% 分配，这是情景假设。此情景仅用于胜率，不改写逐场结果，也不补估声望或积分。未调查的其他未知场不套用此值。';
+  $('scenario-note').textContent='按你的估计：此前已调查的提前结束录像胜率取 30%。估计胜率 =（已知胜场 + 已调查的提前结束场数 × 30%）÷ 总场数。筛选后的各组也统一按 30% 分配，这是情景假设。此情景仅用于胜率，不改写逐场结果，也不补估声望或积分。新增及其他未调查的未知场不套用此值。';
   $('result-note').textContent=isWin?'比较胜负结果，保留未知比例、置信区间和 30% 情景。':metric==='rating'?'比较本人每场实际加减分。场均反映有值对局的得分效率，净变化是这些对局的合计。胜局和负局分别统计；缺失场不补估。':'比较本人声望表现。显示均值、中位数和分布，并分别比较胜局、负局。声望保留原值，可超过 200。';
 }
 function renderGroupTable(list,all){
@@ -126,9 +126,8 @@ function render(){
   const list=[...groups.entries()].map(([key,rows])=>({key,rows,...stats(rows)})).filter(g=>resultSummary(g,state.metric).count>=state.min);
   list.sort((a,b)=>compareResults(a,b,state.metric,state.sort));
   renderOverview(all);
-  const investigation=data.investigation_summary?.unknown;
-  $('quality').innerHTML=investigation?`<strong>数据覆盖：</strong>快照中的 ${investigation.files} 场在本人阵亡后、结算前结束录像，缺少最终胜负、声望和积分变化。<button id="inspect-unknown">查看这 ${investigation.files} 场</button>`:'缺失结果保持未知。';
-  if($('inspect-unknown'))$('inspect-unknown').onclick=()=>{const metric=state.metric;state={...defaultState(),metric};state.filters=[{key:'completeness',values:['无战报']}];selectedGroup=null;renderControls();render();};
+  $('quality').innerHTML=`<strong>数据覆盖：</strong>当前 ${all.unknown} 场结果未知，其中 ${all.eligible} 场已确认在阵亡后、结算前结束录像；其余 ${all.unassigned} 场未纳入 30% 情景。${all.unknown?'<button id="inspect-unknown">查看未知场</button>':''}`;
+  if($('inspect-unknown'))$('inspect-unknown').onclick=()=>{state.filters=state.filters.filter(f=>f.key!=='result').concat([{key:'result',values:['未知']}]);selectedGroup=null;renderControls();render();};
   const config=RESULTS[state.metric];
   $('groups-title').textContent=config.label+' · 分组比较';
   $('group-caption').textContent=state.dims.map(k=>dimension(k).label).join(' × ')+` · 当前${config.mean} ${config.format(resultSummary(all,state.metric).mean)} · ${list.length} / ${groups.size} 组 · 差值与其余对局比较`;
@@ -184,5 +183,5 @@ function wire(){
   $('save-view').onclick=()=>{try{localStorage.setItem('onslaught-view-v1',JSON.stringify(state));$('view-status').textContent='已保存到此浏览器';}catch{$('view-status').textContent='此浏览器无法保存视图';}};
   $('load-view').onclick=()=>{try{const saved=JSON.parse(localStorage.getItem('onslaught-view-v1'));state=restoreState(saved);selectedGroup=null;renderControls();render();$('view-status').textContent='已恢复保存的视图';}catch{$('view-status').textContent='没有可恢复的视图';}};
 }
-async function init(){try{const response=await fetch('/api/data');if(!response.ok)throw Error('数据读取失败');data=await response.json();state=defaultState();$('snapshot').textContent=`本地快照 · ${data.metadata.window_start.slice(0,10)} 至 ${data.metadata.cutoff.slice(0,10)} · ${data.metadata.recent_count} 场`;wire();renderControls();render();}catch(error){$('error').hidden=false;$('error').textContent='加载失败：'+error.message;}}
+async function init(){try{const response=await fetch('/api/data');if(!response.ok)throw Error('数据读取失败');data=await response.json();state=defaultState();$('snapshot').textContent=`本地快照 · ${data.metadata.window_start.slice(0,10)} 至 ${data.metadata.cutoff.slice(0,10)} · ${data.metadata.recent_count} 场`;$('startup-message').textContent=data.metadata.startup_message||'';$('startup-message').hidden=!data.metadata.startup_message;wire();renderControls();render();}catch(error){$('error').hidden=false;$('error').textContent='加载失败：'+error.message;}}
 init();

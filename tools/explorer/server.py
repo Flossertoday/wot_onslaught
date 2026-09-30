@@ -1,11 +1,15 @@
-"""Local, read-only Onslaught research UI. Run from any directory."""
+"""Local Onslaught research UI with replay sync at startup. Run from any directory."""
 import argparse
 import csv
 import hashlib
 import json
 import mimetypes
+import subprocess
+import sys
+import tempfile
 import webbrowser
 from collections import Counter, defaultdict
+from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote
@@ -13,6 +17,8 @@ from urllib.parse import unquote
 ROOT = Path(__file__).resolve().parents[2]
 ASSETS = Path(__file__).resolve().parent
 EVIDENCE = ROOT/'DOCS/status/evidence/2026-09-30-replay-audit'
+sys.path.insert(0, str(ROOT / 'tools/replay_analysis'))
+from sync_replays import DEFAULT_SOURCE, sync_replays
 RANKS = {1:'传奇', 2:'冠军', 3:'黄金', 4:'白银', 5:'青铜', 6:'黑铁'}
 CLASSES = {'heavyTank':'重坦','mediumTank':'中坦','lightTank':'轻坦','AT-SPG':'坦歼','SPG':'火炮'}
 NUMBERS = {'team','header_team','rating_before','rating_after','rating_delta','duration','health',
@@ -83,7 +89,7 @@ def composition(players):
     return ' · '.join(f'{rank}×{counts[rank]}' for rank in order if counts[rank])
 
 
-def build_data(evidence=EVIDENCE):
+def build_data(evidence=EVIDENCE, investigation_evidence=None):
     audit = json.loads((evidence/'audit.json').read_text(encoding='utf-8'))
     battles = load_csv(evidence/'battles.csv')
     players = load_csv(evidence/'players.csv')
@@ -94,9 +100,14 @@ def build_data(evidence=EVIDENCE):
         grouped[p['file']].append(p)
         if p.get('vehicle_class'):
             classes[p['vehicle']] = p['vehicle_class']
-    forensic_path = evidence/'missing-results.json'
+    forensic_path = (investigation_evidence or evidence)/'missing-results.json'
     forensic = json.loads(forensic_path.read_text(encoding='utf-8')) if forensic_path.exists() else {}
     events = {r['file']:r for r in forensic.get('records',[])}
+    if investigation_evidence is not None:
+        # Historical investigations only apply to byte-identical replays.
+        hashes = {r['file']:r['sha256'] for r in load_csv(investigation_evidence/'battles.csv')}
+        unchanged = {r['file'] for r in battles if hashes.get(r['file']) == r['sha256']}
+        events = {name:event for name,event in events.items() if name in unchanged}
     records=[]
     for b in battles:
         if b.get('duplicate'):
@@ -143,6 +154,43 @@ def build_data(evidence=EVIDENCE):
                 investigation_summary=forensic.get('summary'),control_validation=forensic.get('control_validation'))
 
 
+def load_startup_data(source=DEFAULT_SOURCE, game=DEFAULT_SOURCE.parent):
+    messages = []
+    if source is not None:
+        report = sync_replays(source, ROOT/'replays')
+        messages.append(f"录像同步：新增 {report['copied']}，已有 {report['existing']}，"
+                        f"普通模式 {report['ignored']}，待完成 {report['pending']}，"
+                        f"冲突 {len(report['conflicts'])}，错误 {len(report['errors'])}。")
+        print(json.dumps(report, ensure_ascii=True), flush=True)
+        if report['conflicts'] or report['errors']:
+            messages.append('部分录像未同步，请查看启动窗口的具体原因。')
+    else:
+        messages.append('已跳过源目录同步。')
+    cache = ROOT/'.drafts/explorer'
+    try:
+        cache.mkdir(parents=True, exist_ok=True)
+        # Each launch builds privately; historical evidence is never overwritten.
+        with tempfile.TemporaryDirectory(dir=cache, prefix='snapshot-') as folder:
+            evidence = Path(folder)
+            cutoff = datetime.now(timezone(timedelta(hours=8))).isoformat()
+            print('Refreshing replay analysis...', flush=True)
+            result = subprocess.run([
+                sys.executable, str(ROOT/'tools/replay_analysis/audit.py'),
+                '--replays', str(ROOT/'replays'), '--game', str(game),
+                '--cutoff', cutoff, '--output', str(evidence),
+            ], capture_output=True, text=True, timeout=180)
+            if result.returncode:
+                raise RuntimeError(result.stdout + result.stderr)
+            data = build_data(evidence, investigation_evidence=EVIDENCE)
+        messages.append(f"分析已更新，共 {len(data['records'])} 场录像；默认显示最近七天。")
+    except (OSError, ValueError, KeyError, RuntimeError, subprocess.SubprocessError) as error:
+        print(f'Analysis refresh failed: {error}', flush=True)
+        data = build_data(EVIDENCE)
+        messages.append('分析刷新失败，当前显示历史快照，新录像尚未纳入。请查看启动窗口。')
+    data['metadata']['startup_message'] = ' '.join(messages)
+    return data
+
+
 def make_handler(data):
     payload=json.dumps(data,ensure_ascii=False).encode('utf-8')
     replays={row['id']:row for row in data['records']}
@@ -182,8 +230,12 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--port',type=int,default=8765)
     parser.add_argument('--open-browser',action='store_true')
+    parser.add_argument('--replay-source',type=Path,default=DEFAULT_SOURCE)
+    parser.add_argument('--game',type=Path,default=DEFAULT_SOURCE.parent)
+    parser.add_argument('--no-sync',action='store_true',help='Analyze local replays without copying from the game')
     args=parser.parse_args()
-    server=ThreadingHTTPServer(('127.0.0.1',args.port),make_handler(build_data()))
+    data = load_startup_data(None if args.no_sync else args.replay_source, args.game)
+    server=ThreadingHTTPServer(('127.0.0.1',args.port),make_handler(data))
     print(f'Onslaught explorer: http://127.0.0.1:{server.server_port}',flush=True)
     if args.open_browser:
         webbrowser.open(f'http://127.0.0.1:{server.server_port}')
