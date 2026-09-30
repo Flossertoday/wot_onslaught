@@ -69,5 +69,10 @@ for(const retired of ['白银局','未分类']){
 }
 const lowPressure=context.restoreState({...saved,filters:[{key:'lobby_type',values:['低压局']}]});
 assert.deepEqual(Array.from(lowPressure.filters),[{key:'lobby_type',values:['低压局']}]);
+const other=context.restoreState({...saved,filters:[{key:'lobby_type',values:['其它']}]});
+assert.deepEqual(Array.from(other.filters),[{key:'lobby_type',values:['其它']}]);
+vm.runInContext("data.records=[{tags:{day:'2026-09-29',lobby_type:'其它'}},{tags:{day:'2026-09-29',lobby_type:'高压局'}}];state=restoreState({dims:['lobby_type'],filters:[{key:'lobby_type',values:['其它']}]})",context);
+assert.equal(context.filtered().length,1);
+assert.equal(context.filtered()[0].tags.lobby_type,'其它');
 assert.throws(()=>context.restoreState({...saved,dims:['bad']}));
 console.log('Result views: distributions, outcome means, excluded-group baselines, missing-last sorting and saved-view migration passed.');

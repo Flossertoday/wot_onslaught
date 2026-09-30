@@ -39,16 +39,18 @@ class ExplorerTests(unittest.TestCase):
         def room(ranks):
             return [dict(rank_raw=[rank,1,0],is_self=i==13,is_ally=i>=7)
                     for i,rank in enumerate(ranks)]
-        # Golden threshold is a count across both teams, not a low-rank proxy.
-        examples = [([3]*5+[6]*9,'低压局'),([3]*6+[6]*8,'黄金局'),
-                    ([3]*6+[4]*8,'黄金局'),([3]*14,'黄金局'),
-                    ([6]*14,'低压局'),([4]*7+[5]*7,'低压局')]
+        # Counts include both teams and self; black iron is not silver/bronze.
+        examples = [([3]*7+[6]*7,'其它'),([3]*8+[6]*6,'黄金局'),
+                    ([3]*14,'黄金局'),([6]*14,'其它'),
+                    ([4]*9+[6]*5,'其它'),([4]*10+[6]*4,'低压局'),
+                    ([4]*5+[5]*5+[6]*4,'低压局'),([5]*14,'低压局')]
         for high in (1,2):
-            examples.extend([([3]*13+[high],'高压局'),
-                             ([4]+[3]*12+[high],'高压局'),
-                             ([5]+[3]*12+[high],'高压局'),
-                             ([4,5]+[3]*11+[high],'低压局'),
-                             ([4]*13+[high],'低压局')])
+            examples.extend([([high]+[3]*8+[4]*5,'其它'),
+                             ([high]+[3]*9+[4]*4,'高压局'),
+                             ([high]*10+[6]*4,'高压局'),
+                             ([high]+[3]*13,'高压局'),
+                             ([high]+[4]*9+[6]*4,'其它'),
+                             ([high]+[4]*10+[6]*3,'低压局')])
         for ranks,expected in examples:
             with self.subTest(ranks=ranks):
                 self.assertEqual(lobby_type(room(ranks)),expected)
@@ -64,13 +66,22 @@ class ExplorerTests(unittest.TestCase):
         def classify(ranks,skipped):
             return lobby_type([dict(rank_raw=[rank,1,0] if rank else None,
                                     qualification=i in skipped) for i,rank in enumerate(ranks)])
-        # Skipping the high rank allows gold; skipping bronze allows high pressure.
-        self.assertEqual(classify([1]+[3]*6+[6]*7,{0}),'黄金局')
-        self.assertEqual(classify([2,4,5]+[3]*11,{1}),'高压局')
-        # Skipping the sixth gold falls below the room-wide threshold.
-        self.assertEqual(classify([3]*6+[6]*8,{0}),'低压局')
-        self.assertEqual(classify([None]+[3]*6+[6]*7,{0}),'黄金局')
-        self.assertEqual(classify([None]*14,set(range(14))),'低压局')
+        # Qualification can remove the high rank or lower a threshold count.
+        self.assertEqual(classify([1]+[3]*8+[6]*5,{0}),'黄金局')
+        self.assertEqual(classify([2]+[3]*9+[6]*4,{1}),'其它')
+        self.assertEqual(classify([3]*8+[6]*6,{0}),'其它')
+        self.assertEqual(classify([4]*10+[6]*4,{0}),'其它')
+        self.assertEqual(classify([None]+[3]*8+[6]*5,{0}),'黄金局')
+        self.assertEqual(classify([None]*14,set(range(14))),'其它')
+
+    def test_studzianki_leopard_is_high_pressure(self):
+        row = next(r for r in self.data['records']
+                   if r['file']=='99-poland/20260929_1816_germany-G89_Leopard1_Onslaught_99_poland.wotreplay')
+        self.assertEqual(row['started_at'],'2026-09-29T18:16:11+08:00')
+        self.assertEqual(Counter(p['rank_raw'][0] for p in row['players']),
+                         {2:2,3:10,4:2})
+        self.assertFalse(any(p['qualification'] for p in row['players']))
+        self.assertEqual(row['tags']['lobby_type'],'高压局')
 
     def test_lobby_replaces_five_dimensions_and_keeps_missing(self):
         dimensions = {d['key'] for d in self.data['dimensions']}
@@ -78,7 +89,7 @@ class ExplorerTests(unittest.TestCase):
         self.assertTrue(dimensions.isdisjoint({'self_rank','ally_ranks','enemy_ranks','allies_high','enemies_high'}))
         for row in self.data['records']:
             self.assertEqual(row['tags']['lobby_type'],lobby_type(row['players']))
-            self.assertIn(row['tags']['lobby_type'],{'高压局','黄金局','低压局','未知'})
+            self.assertIn(row['tags']['lobby_type'],{'高压局','黄金局','低压局','其它','未知'})
             if not row['players']:
                 self.assertEqual(row['tags']['lobby_type'],'未知')
         # All 42 formerly unknown rooms with qualification players are now classified.

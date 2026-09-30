@@ -91,11 +91,14 @@ def lobby_type(players):
     ranks = [p['rank_raw'][0] for p in ranked]
     low = sum(rank in (4, 5) for rank in ranks)
     high = any(rank in (1, 2) for rank in ranks)
-    if high and low <= 1:
+    gold_or_higher = sum(rank in (1, 2, 3) for rank in ranks)
+    if high and gold_or_higher >= 10:
         return '高压局'
-    if not high and ranks.count(3) >= 6:
+    if low >= 10:
+        return '低压局'
+    if not high and ranks.count(3) >= 8:
         return '黄金局'
-    return '低压局'
+    return '其它'
 
 
 def build_data(evidence=EVIDENCE, investigation_evidence=None):
