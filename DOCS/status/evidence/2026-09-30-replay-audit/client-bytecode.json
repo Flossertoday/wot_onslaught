@@ -1,0 +1,503 @@
+{
+  "package": "res/packages/comp7.pkg",
+  "entries": {
+    "comp7/scripts/client/comp7/gui/impl/lobby/battle_results/submodel_presenters/comp7_progression.pyc": {
+      "sha256": "3f393f910757b6aff4aa777a617475d82b46c27840298fefcda604e7b8a8f6e4",
+      "functions": {
+        "<module>.Comp7ProgressionSubPresenter.__packProgressionData": [
+          {
+            "offset": 0,
+            "op": "LOAD_FAST",
+            "arg": "battleResults"
+          },
+          {
+            "offset": 3,
+            "op": "LOAD_ATTR",
+            "arg": "results"
+          },
+          {
+            "offset": 6,
+            "op": "LOAD_CONST",
+            "arg": "\"personal\""
+          },
+          {
+            "offset": 9,
+            "op": "BINARY_SUBSCR",
+            "arg": ""
+          },
+          {
+            "offset": 10,
+            "op": "LOAD_CONST",
+            "arg": "\"avatar\""
+          },
+          {
+            "offset": 13,
+            "op": "BINARY_SUBSCR",
+            "arg": ""
+          },
+          {
+            "offset": 14,
+            "op": "STORE_FAST",
+            "arg": "avatarResults"
+          },
+          {
+            "offset": 17,
+            "op": "LOAD_FAST",
+            "arg": "avatarResults"
+          },
+          {
+            "offset": 20,
+            "op": "LOAD_ATTR",
+            "arg": "get"
+          },
+          {
+            "offset": 23,
+            "op": "LOAD_CONST",
+            "arg": "\"comp7Rating\""
+          },
+          {
+            "offset": 26,
+            "op": "LOAD_CONST",
+            "arg": "0"
+          },
+          {
+            "offset": 29,
+            "op": "CALL_FUNCTION",
+            "arg": "2 positional, 0 named"
+          },
+          {
+            "offset": 32,
+            "op": "STORE_FAST",
+            "arg": "prevRating"
+          },
+          {
+            "offset": 35,
+            "op": "LOAD_FAST",
+            "arg": "avatarResults"
+          },
+          {
+            "offset": 38,
+            "op": "LOAD_ATTR",
+            "arg": "get"
+          },
+          {
+            "offset": 41,
+            "op": "LOAD_CONST",
+            "arg": "\"comp7RatingDelta\""
+          },
+          {
+            "offset": 44,
+            "op": "LOAD_CONST",
+            "arg": "0"
+          },
+          {
+            "offset": 47,
+            "op": "CALL_FUNCTION",
+            "arg": "2 positional, 0 named"
+          },
+          {
+            "offset": 50,
+            "op": "STORE_FAST",
+            "arg": "ratingDelta"
+          },
+          {
+            "offset": 53,
+            "op": "LOAD_FAST",
+            "arg": "avatarResults"
+          },
+          {
+            "offset": 56,
+            "op": "LOAD_ATTR",
+            "arg": "get"
+          },
+          {
+            "offset": 59,
+            "op": "LOAD_CONST",
+            "arg": "\"comp7Rank\""
+          },
+          {
+            "offset": 62,
+            "op": "LOAD_CONST",
+            "arg": "(0, 0, 0)"
+          },
+          {
+            "offset": 65,
+            "op": "CALL_FUNCTION",
+            "arg": "2 positional, 0 named"
+          },
+          {
+            "offset": 68,
+            "op": "UNPACK_SEQUENCE",
+            "arg": ""
+          },
+          {
+            "offset": 71,
+            "op": "STORE_FAST",
+            "arg": "rank"
+          },
+          {
+            "offset": 74,
+            "op": "STORE_FAST",
+            "arg": "_"
+          },
+          {
+            "offset": 77,
+            "op": "STORE_FAST",
+            "arg": "_"
+          },
+          {
+            "offset": 80,
+            "op": "LOAD_GLOBAL",
+            "arg": "max"
+          },
+          {
+            "offset": 83,
+            "op": "LOAD_FAST",
+            "arg": "prevRating"
+          },
+          {
+            "offset": 86,
+            "op": "LOAD_FAST",
+            "arg": "ratingDelta"
+          },
+          {
+            "offset": 89,
+            "op": "BINARY_ADD",
+            "arg": ""
+          },
+          {
+            "offset": 90,
+            "op": "LOAD_CONST",
+            "arg": "0"
+          },
+          {
+            "offset": 93,
+            "op": "CALL_FUNCTION",
+            "arg": "2 positional, 0 named"
+          },
+          {
+            "offset": 96,
+            "op": "STORE_FAST",
+            "arg": "currentRating"
+          }
+        ]
+      }
+    },
+    "comp7/scripts/client/comp7/gui/impl/lobby/battle_results/comp7_packers.pyc": {
+      "sha256": "19d353d04cb3f331ad42deff86bec9e176994ee1686f6ea48552fd5bd199656a",
+      "functions": {
+        "<module>.Comp7PlayerInfo.packModel": [
+          {
+            "offset": 132,
+            "op": "LOAD_FAST",
+            "arg": "vehicleSumInfo"
+          },
+          {
+            "offset": 135,
+            "op": "LOAD_ATTR",
+            "arg": "avatar"
+          },
+          {
+            "offset": 138,
+            "op": "LOAD_ATTR",
+            "arg": "extensionInfo"
+          },
+          {
+            "offset": 141,
+            "op": "LOAD_ATTR",
+            "arg": "get"
+          },
+          {
+            "offset": 144,
+            "op": "LOAD_CONST",
+            "arg": "\"comp7Rank\""
+          },
+          {
+            "offset": 147,
+            "op": "LOAD_CONST",
+            "arg": "(0, 0, 0)"
+          },
+          {
+            "offset": 150,
+            "op": "CALL_FUNCTION",
+            "arg": "2 positional, 0 named"
+          },
+          {
+            "offset": 153,
+            "op": "UNPACK_SEQUENCE",
+            "arg": ""
+          },
+          {
+            "offset": 156,
+            "op": "STORE_FAST",
+            "arg": "rank"
+          },
+          {
+            "offset": 159,
+            "op": "STORE_FAST",
+            "arg": "divisionIdx"
+          },
+          {
+            "offset": 162,
+            "op": "STORE_FAST",
+            "arg": "_serialIdx"
+          },
+          {
+            "offset": 165,
+            "op": "LOAD_FAST",
+            "arg": "rank"
+          },
+          {
+            "offset": 168,
+            "op": "LOAD_CONST",
+            "arg": "0"
+          },
+          {
+            "offset": 171,
+            "op": "COMPARE_OP",
+            "arg": ">"
+          },
+          {
+            "offset": 174,
+            "op": "POP_JUMP_IF_FALSE",
+            "arg": "to 245"
+          },
+          {
+            "offset": 177,
+            "op": "LOAD_GLOBAL",
+            "arg": "getPlayerDivisionByRankAndIndex"
+          },
+          {
+            "offset": 180,
+            "op": "LOAD_FAST",
+            "arg": "rank"
+          },
+          {
+            "offset": 183,
+            "op": "LOAD_FAST",
+            "arg": "divisionIdx"
+          },
+          {
+            "offset": 186,
+            "op": "CALL_FUNCTION",
+            "arg": "2 positional, 0 named"
+          },
+          {
+            "offset": 189,
+            "op": "STORE_FAST",
+            "arg": "division"
+          },
+          {
+            "offset": 192,
+            "op": "LOAD_GLOBAL",
+            "arg": "comp7_shared"
+          }
+        ]
+      }
+    },
+    "comp7/scripts/common/comp7_common/comp7_battle_results/comp7.pyc": {
+      "sha256": "42a76df87c3b3b3c63096fcd176ca9678ef981bb2c4ad874ba2806a9737a851e",
+      "functions": {
+        "<module>": [
+          {
+            "offset": 48,
+            "op": "LOAD_NAME",
+            "arg": "COMP7_BATTLE_RESULTS"
+          },
+          {
+            "offset": 51,
+            "op": "LOAD_CONST",
+            "arg": "\"comp7Rating\""
+          },
+          {
+            "offset": 54,
+            "op": "LOAD_NAME",
+            "arg": "int"
+          },
+          {
+            "offset": 57,
+            "op": "LOAD_CONST",
+            "arg": "0"
+          },
+          {
+            "offset": 60,
+            "op": "LOAD_CONST",
+            "arg": "None"
+          },
+          {
+            "offset": 63,
+            "op": "LOAD_CONST",
+            "arg": "\"skip\""
+          },
+          {
+            "offset": 66,
+            "op": "LOAD_NAME",
+            "arg": "ENTRY_TYPE"
+          },
+          {
+            "offset": 69,
+            "op": "LOAD_ATTR",
+            "arg": "ACCOUNT_SELF"
+          },
+          {
+            "offset": 72,
+            "op": "BUILD_TUPLE",
+            "arg": ""
+          },
+          {
+            "offset": 75,
+            "op": "LOAD_CONST",
+            "arg": "\"comp7Rank\""
+          },
+          {
+            "offset": 78,
+            "op": "LOAD_NAME",
+            "arg": "tuple"
+          },
+          {
+            "offset": 81,
+            "op": "LOAD_CONST",
+            "arg": "(0, 0, 0)"
+          },
+          {
+            "offset": 84,
+            "op": "LOAD_CONST",
+            "arg": "None"
+          },
+          {
+            "offset": 87,
+            "op": "LOAD_CONST",
+            "arg": "\"skip\""
+          },
+          {
+            "offset": 90,
+            "op": "LOAD_NAME",
+            "arg": "ENTRY_TYPE"
+          },
+          {
+            "offset": 93,
+            "op": "LOAD_ATTR",
+            "arg": "ACCOUNT_ALL"
+          },
+          {
+            "offset": 96,
+            "op": "BUILD_TUPLE",
+            "arg": ""
+          },
+          {
+            "offset": 99,
+            "op": "LOAD_CONST",
+            "arg": "\"comp7RatingDelta\""
+          },
+          {
+            "offset": 102,
+            "op": "LOAD_NAME",
+            "arg": "int"
+          },
+          {
+            "offset": 105,
+            "op": "LOAD_CONST",
+            "arg": "0"
+          },
+          {
+            "offset": 108,
+            "op": "LOAD_CONST",
+            "arg": "None"
+          },
+          {
+            "offset": 111,
+            "op": "LOAD_CONST",
+            "arg": "\"skip\""
+          },
+          {
+            "offset": 114,
+            "op": "LOAD_NAME",
+            "arg": "ENTRY_TYPE"
+          },
+          {
+            "offset": 117,
+            "op": "LOAD_ATTR",
+            "arg": "ACCOUNT_SELF"
+          }
+        ]
+      }
+    }
+  },
+  "arena_period": {
+    "package": "res/packages/scripts.pkg",
+    "entry": "scripts/common/constants.pyc",
+    "sha256": "7be20f1cc09f56294be2db0369d4c706a23375f516e126f5c690398946901a67",
+    "instructions": [
+      {
+        "offset": 0,
+        "op": "LOAD_NAME",
+        "arg": "__name__"
+      },
+      {
+        "offset": 3,
+        "op": "STORE_NAME",
+        "arg": "__module__"
+      },
+      {
+        "offset": 6,
+        "op": "LOAD_CONST",
+        "arg": "0"
+      },
+      {
+        "offset": 9,
+        "op": "STORE_NAME",
+        "arg": "IDLE"
+      },
+      {
+        "offset": 12,
+        "op": "LOAD_CONST",
+        "arg": "1"
+      },
+      {
+        "offset": 15,
+        "op": "STORE_NAME",
+        "arg": "WAITING"
+      },
+      {
+        "offset": 18,
+        "op": "LOAD_CONST",
+        "arg": "2"
+      },
+      {
+        "offset": 21,
+        "op": "STORE_NAME",
+        "arg": "PREBATTLE"
+      },
+      {
+        "offset": 24,
+        "op": "LOAD_CONST",
+        "arg": "3"
+      },
+      {
+        "offset": 27,
+        "op": "STORE_NAME",
+        "arg": "BATTLE"
+      },
+      {
+        "offset": 30,
+        "op": "LOAD_CONST",
+        "arg": "4"
+      },
+      {
+        "offset": 33,
+        "op": "STORE_NAME",
+        "arg": "AFTERBATTLE"
+      },
+      {
+        "offset": 36,
+        "op": "LOAD_LOCALS",
+        "arg": ""
+      },
+      {
+        "offset": 37,
+        "op": "RETURN_VALUE",
+        "arg": ""
+      }
+    ]
+  }
+}

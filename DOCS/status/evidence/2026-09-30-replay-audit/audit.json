@@ -1,0 +1,391 @@
+{
+  "cutoff": "2026-09-30T13:32:22+08:00",
+  "window_start": "2026-09-23T13:32:22+08:00",
+  "clock": "header.dateTime interpreted as UTC+08; arenaCreateTime cross-check",
+  "files": 431,
+  "failures": [],
+  "duplicates": 0,
+  "all_status": {
+    "valid": 339,
+    "no_result_block": 91,
+    "invalid_self_identity": 1
+  },
+  "recent_status": {
+    "no_result_block": 78,
+    "valid": 291
+  },
+  "recent_results": {
+    "unknown": 78,
+    "win": 158,
+    "loss": 133
+  },
+  "recent_count": 369,
+  "excluded_old_or_future": 62,
+  "cache_size_matches": 431,
+  "cache_known_outcome_agrees": 339,
+  "unknown_cache_outcomes": {
+    "-1": 91,
+    "1": 1
+  },
+  "valid_player_rows": 4746,
+  "recent_player_rows": 4074,
+  "rank_rows": 4746,
+  "qualification_rows": 52,
+  "rank_matches_rating_before": 339,
+  "rank_matches_rating_after": 251,
+  "self_rank_matches_avatar": 339,
+  "resolved_vehicle_classes": 4746,
+  "spawn_mapped_rows": 431,
+  "client_entry_sha256": {
+    "scripts/arena_defs/04_himmelsdorf.xml": "e8f9edc5ff9220418ddbb83261d72f5974df8e6908fd4ba0906ce8eb8c45545d",
+    "scripts/item_defs/vehicles/ussr/list.xml": "edadfe0c5f26b964d96444d2fb97c29f6d2ece5975aa7b447c7e14e0b0b71ab6",
+    "scripts/item_defs/vehicles/usa/list.xml": "19de58f9b3c4117024680de2834dbb82f844de69d28aa33ad28385bea5bf1cce",
+    "scripts/item_defs/vehicles/france/list.xml": "6a3cd78d5cfbf4c5164bf1cc1c50e6899e97b356d37eb1b7502cfc9d65f49887",
+    "scripts/item_defs/vehicles/czech/list.xml": "1a53894944acd6d6fb55540259fb0d6008ce707f9edfb97a8306b4b4a7580c2c",
+    "scripts/item_defs/vehicles/germany/list.xml": "0b8bf697a08811ae68fd47ca69a38c1fbf1131900f2a07a9917368b0a374a22d",
+    "scripts/item_defs/vehicles/poland/list.xml": "e6275f29a99239a6d6f1a9e7c3a53b588edd4bd18a381de65220518186d595e7",
+    "scripts/item_defs/vehicles/uk/list.xml": "b2e8924d122d81a3e3c9606f539eb7285c2bc339a102ecfd68460d041b4e2fbd",
+    "scripts/item_defs/vehicles/japan/list.xml": "476e5af079fed97addf8395539325e471cb665e98962f29eb0f7ee0526d08311",
+    "scripts/item_defs/vehicles/china/list.xml": "f88a9b6136c099bca18a2893e3a2e47c3f275104359256a2c4783f8e72882878",
+    "scripts/arena_defs/05_prohorovka.xml": "4ae2d4909ec7d5f420ace72101ebf4b17f5393ba67d317587e6f4284502feb4b",
+    "scripts/item_defs/vehicles/sweden/list.xml": "bd4a92f42a1f8580d6a5a28af5f0a8fe2d91c0ffb959511bda601df75e739d8f",
+    "scripts/item_defs/vehicles/italy/list.xml": "d8040884f723f926d40eea75299a2bfd93cf6a026bff2c59d87cd734a5001e1e",
+    "scripts/arena_defs/06_ensk.xml": "2d3ed058fca3ad7be3d9d7340351b22e8a2aed00641cbf121d521cb5a86e6332",
+    "scripts/arena_defs/08_ruinberg.xml": "534af752c729384dda233960cb4c13502c69a4f8dacd6cc311cd908ef7810425",
+    "scripts/arena_defs/10_hills.xml": "03eedfd1d399ac52501e20d74fca197e34406a8e146d243a3dfaf9393a022f60",
+    "scripts/arena_defs/11_murovanka.xml": "8cfec8b14020b62702d58bcf8e9044ae7a410537380eda8e7ab11a9a2aa24fd7",
+    "scripts/arena_defs/114_czech.xml": "612bc6474189252bc60af3a81b22771c24c2b5b622274b39eee39c3e8c0eba8b",
+    "scripts/arena_defs/115_sweden_comp7_nb.xml": "5a11211b77c6bc13fb82c8a2b86341050d1363df29872bb63f9d1ae74cebfef4",
+    "scripts/arena_defs/121_lost_paradise_v.xml": "42fe28c4a8f52e25773faa961a065193f330ad9e2c2bb8e86db0fa8ff893ac0b",
+    "scripts/arena_defs/127_japort.xml": "406ff3a45edf228264399f25acb3b2543bc1f7cd80a83035d5dcf8b5a9a80c03",
+    "scripts/arena_defs/128_last_frontier_v_comp7_nb.xml": "dae67af92393ad0c80fc39997ab07ccd53204f316fb493d9119c0a729cd267f9",
+    "scripts/arena_defs/14_siegfried_line.xml": "ca1e36fc0cc0a0ec5e132e0b621f36f5375310f3e7f38d452023152986542820",
+    "scripts/arena_defs/18_cliff.xml": "2e4581ddcf27461a6d2ecf711df093cd1adb7311646268edc8ace7559f255cc3",
+    "scripts/arena_defs/23_westfeld.xml": "a472de105c40af8faf4b95f353efaf821c5b66cba01cbf7a0729da6c270610a9",
+    "scripts/arena_defs/28_desert_comp7_nb.xml": "eacc35b8e1d547cf0f77a6f36b5f2766de096f553b5b8684dc507bad7591bc43",
+    "scripts/arena_defs/29_el_hallouf.xml": "1cc78b04bc3c6bfba16feb66156c2a81228ba0279614fc962b6692e7d1bf580f",
+    "scripts/arena_defs/31_airfield.xml": "06a610dd75818957e800aa74abd41323722b3cdf5958a19295e5989b250c0b56",
+    "scripts/arena_defs/35_steppes_comp7_nb.xml": "bd2122e28f13eaa43a76cade9db582983d1041ca41762af03dfdcfa4e4851ca4",
+    "scripts/arena_defs/44_north_america.xml": "a4a1ab6b69e5e64b16e01a157183b662afa64c342c73bb09638f91c059bc238f",
+    "scripts/arena_defs/63_tundra.xml": "2f2462cc4e27e61d20f95ab665adb656b7b097eb56d89c7988bb9912ed313a80",
+    "scripts/arena_defs/95_lost_city_ctf.xml": "aef11bf8c27b67d72234199f7a56e510ee7eaccaf238efac9ec38a7f8ca490a8",
+    "scripts/arena_defs/99_poland.xml": "52e807be3bd577905337a8c23b5b48983aa492c45f34c204d536b3dd4ea3bd20"
+  },
+  "spawn_definitions": {
+    "04_himmelsdorf": {
+      "1": [
+        [
+          75.53600311279297,
+          326.53900146484375
+        ]
+      ],
+      "2": [
+        [
+          11.107999801635742,
+          -227.04600524902344
+        ]
+      ]
+    },
+    "05_prohorovka": {
+      "1": [
+        [
+          -54.481040954589844,
+          364.45147705078125
+        ]
+      ],
+      "2": [
+        [
+          10.233442306518555,
+          -339.277587890625
+        ]
+      ]
+    },
+    "06_ensk": {
+      "1": [
+        [
+          38.167999267578125,
+          270.4209899902344
+        ]
+      ],
+      "2": [
+        [
+          77.94300079345703,
+          -265.8110046386719
+        ]
+      ]
+    },
+    "08_ruinberg": {
+      "1": [
+        [
+          -82.7553482055664,
+          333.9615783691406
+        ]
+      ],
+      "2": [
+        [
+          0.5125659704208374,
+          -325.228515625
+        ]
+      ]
+    },
+    "10_hills": {
+      "1": [
+        [
+          -19.039596557617188,
+          -292.8985595703125
+        ]
+      ],
+      "2": [
+        [
+          -62.68792724609375,
+          258.2371520996094
+        ]
+      ]
+    },
+    "11_murovanka": {
+      "1": [
+        [
+          -168.18154907226562,
+          385.06829833984375
+        ]
+      ],
+      "2": [
+        [
+          -209.9667510986328,
+          -368.1181640625
+        ]
+      ]
+    },
+    "114_czech": {
+      "1": [
+        [
+          -47.34600067138672,
+          374.5400085449219
+        ]
+      ],
+      "2": [
+        [
+          -67.58699798583984,
+          -363.1319885253906
+        ]
+      ]
+    },
+    "115_sweden_comp7_nb": {
+      "1": [
+        [
+          -473.82171630859375,
+          -129.70675659179688
+        ]
+      ],
+      "2": [
+        [
+          237.86135864257812,
+          319.8529357910156
+        ]
+      ]
+    },
+    "121_lost_paradise_v": {
+      "1": [
+        [
+          -312.689697265625,
+          -205.94081115722656
+        ]
+      ],
+      "2": [
+        [
+          338.8934326171875,
+          330.38177490234375
+        ]
+      ]
+    },
+    "127_japort": {
+      "1": [
+        [
+          -284.02276611328125,
+          -319.1929626464844
+        ]
+      ],
+      "2": [
+        [
+          320.9449462890625,
+          -250.26364135742188
+        ]
+      ]
+    },
+    "128_last_frontier_v_comp7_nb": {
+      "1": [
+        [
+          364.83843994140625,
+          233.34951782226562
+        ]
+      ],
+      "2": [
+        [
+          -298.4323425292969,
+          -320.1631774902344
+        ]
+      ]
+    },
+    "14_siegfried_line": {
+      "1": [
+        [
+          174.03689575195312,
+          -255.26620483398438
+        ]
+      ],
+      "2": [
+        [
+          124.1709976196289,
+          239.5699920654297
+        ]
+      ]
+    },
+    "18_cliff": {
+      "1": [
+        [
+          -216.9080047607422,
+          385.1340026855469
+        ]
+      ],
+      "2": [
+        [
+          -193.4739990234375,
+          -377.05499267578125
+        ]
+      ]
+    },
+    "23_westfeld": {
+      "1": [
+        [
+          8.621536254882812,
+          405.4349670410156
+        ]
+      ],
+      "2": [
+        [
+          -398.5610046386719,
+          -21.98900032043457
+        ]
+      ]
+    },
+    "28_desert_comp7_nb": {
+      "1": [
+        [
+          301.6160888671875,
+          -405.8452453613281
+        ]
+      ],
+      "2": [
+        [
+          -463.2720947265625,
+          -124.02255249023438
+        ]
+      ]
+    },
+    "29_el_hallouf": {
+      "1": [
+        [
+          84.53823852539062,
+          365.0078430175781
+        ]
+      ],
+      "2": [
+        [
+          -331.7890930175781,
+          -146.53456115722656
+        ]
+      ]
+    },
+    "31_airfield": {
+      "1": [
+        [
+          442.0904541015625,
+          -55.38995361328125
+        ]
+      ],
+      "2": [
+        [
+          -402.241943359375,
+          -73.41307067871094
+        ]
+      ]
+    },
+    "35_steppes_comp7_nb": {
+      "1": [
+        [
+          -88.95079803466797,
+          -358.0501403808594
+        ]
+      ],
+      "2": [
+        [
+          -302.1275329589844,
+          171.6028594970703
+        ]
+      ]
+    },
+    "44_north_america": {
+      "1": [
+        [
+          -459.6585998535156,
+          17.75394058227539
+        ]
+      ],
+      "2": [
+        [
+          158.583740234375,
+          391.4579772949219
+        ]
+      ]
+    },
+    "63_tundra": {
+      "1": [
+        [
+          -266.978759765625,
+          -241.26072692871094
+        ]
+      ],
+      "2": [
+        [
+          261.60870361328125,
+          -135.88160705566406
+        ]
+      ]
+    },
+    "95_lost_city_ctf": {
+      "1": [
+        [
+          48.54499816894531,
+          317.7690124511719
+        ]
+      ],
+      "2": [
+        [
+          51.36800003051758,
+          -315.6130065917969
+        ]
+      ]
+    },
+    "99_poland": {
+      "1": [
+        [
+          -390.5968017578125,
+          221.07772827148438
+        ]
+      ],
+      "2": [
+        [
+          412.7955322265625,
+          235.06103515625
+        ]
+      ]
+    }
+  },
+  "caveats": [
+    "Known-result statistics only; missing outcomes may be nonrandom.",
+    "Fisher/BH is exploratory: assumes independent battles; no confounder adjustment.",
+    "Spawn coordinates are map configuration, not measured vehicle positions.",
+    "Other players have rank categories, not exact rating points.",
+    "Bounds assign all unknown results to losses or wins; they are not confidence intervals."
+  ]
+}
