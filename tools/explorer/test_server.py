@@ -1,7 +1,7 @@
 import json
 import unittest
 from collections import Counter
-from server import build_data,rank_label,prestige_band,rating_band,lobby_type
+from server import build_data,rank_label,damage_band,prestige_band,rating_band,lobby_type
 
 
 class ExplorerTests(unittest.TestCase):
@@ -120,6 +120,14 @@ class ExplorerTests(unittest.TestCase):
         self.assertEqual(sum(v>200 for v in values),9)
 
     def test_metric_bands_preserve_zero_missing_and_boundaries(self):
+        for value,expected in [(None,'未知'),(0,'<2000'),(1999,'<2000'),
+                               (2000,'2000–2999'),(2999,'2000–2999'),
+                               (3000,'3000–4000'),(3999,'3000–4000'),
+                               (4000,'3000–4000'),(4001,'>4000')]:
+            with self.subTest(damage=value):
+                self.assertEqual(damage_band(value),expected)
+        for row in self.data['records']:
+            self.assertEqual(row['tags']['damage_band'],damage_band(row['damageDealt']))
         for value,expected in [(None,'未知'),(0,'<80'),(79,'<80'),(80,'80–109'),
                                (110,'110–139'),(140,'140–199'),(200,'≥200'),(242,'≥200')]:
             self.assertEqual(prestige_band(value),expected)

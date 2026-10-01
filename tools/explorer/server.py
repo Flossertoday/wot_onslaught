@@ -41,6 +41,12 @@ PERFORMANCE_FIELDS = [
     ('droppedCapturePoints','防守点数'), ('poiCapturedByOwnTeam','本队战略点占领')]
 
 
+def damage_band(value):
+    if value is None:
+        return '未知'
+    return '<2000' if value < 2000 else '2000–2999' if value < 3000 else '3000–4000' if value <= 4000 else '>4000'
+
+
 def prestige_band(value):
     if value is None:
         return '未知'
@@ -133,7 +139,6 @@ def build_data(evidence=EVIDENCE, investigation_evidence=None):
         death_state = ('阵亡后结束 / 无结算' if event and event['death_clock'] is not None and not event['has_afterbattle']
                        else '已记录结算' if b['result']!='unknown'
                        else '假设提前离场 / 无战报' if b['result_status']=='no_result_block' else '未确定')
-        damage=b.get('damageDealt')
         b.update(id=b['sha256'], players=party, investigation=event,
                  replay_path=str(ROOT/'replays'/b['file']),
                  tags=dict(map=b['map_name'],side=f"队伍 {int(b['team'])}" if b.get('team') else '未知',
@@ -143,7 +148,7 @@ def build_data(evidence=EVIDENCE, investigation_evidence=None):
                            completeness='有战报' if b['result_status']=='valid' else '无战报' if b['result_status']=='no_result_block' else '战报异常',
                            recording_end=death_state,
                            observed_death='已观测阵亡' if event and event['death_clock'] is not None else '未观测阵亡' if event else '未调查',
-                           damage_band='未知' if damage is None else '<2000' if damage<2000 else '2000–3999' if damage<4000 else '≥4000',
+                           damage_band=damage_band(b.get('damageDealt')),
                            survival='未知' if b.get('health') is None else '存活' if b['health']>0 else '阵亡',
                            prestige_band=prestige_band(b.get('comp7PrestigePoints')),
                            rating_band=rating_band(b.get('rating_delta'))))

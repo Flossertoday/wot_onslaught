@@ -76,6 +76,22 @@ assert.equal(context.filtered().length,1);
 assert.equal(context.filtered()[0].tags.lobby_type,'其它');
 assert.throws(()=>context.restoreState({...saved,dims:['bad']}));
 
+// Split damage bands must not restore obsolete filters as empty populations.
+vm.runInContext("data.dimensions.push({key:'damage_band'})",context);
+for(const retired of ['2000–3999','≥4000']){
+  const migrated=context.restoreState({...saved,dims:['damage_band'],filters:[{key:'map',values:['A']},{key:'damage_band',values:['<2000',retired]}]});
+  assert.deepEqual(Array.from(migrated.dims),['damage_band']);
+  assert.deepEqual(Array.from(migrated.filters),[{key:'map',values:['A']}]);
+  assert.equal(migrated.metric,'prestige');
+}
+for(const value of ['<2000','2000–2999','3000–4000','>4000','未知']){
+  const filters=[{key:'damage_band',values:[value]}];
+  assert.deepEqual(Array.from(context.restoreState({...saved,filters}).filters),filters);
+}
+vm.runInContext("data.records=['<2000','2000–2999','3000–4000','>4000','未知'].map(value=>({tags:{day:'2026-09-29',damage_band:value}}));state=restoreState({metric:'rating',dims:['damage_band'],filters:[{key:'damage_band',values:['2000–2999','3000–4000']}]})",context);
+assert.equal(context.filtered().length,2);
+assert.deepEqual(Array.from(context.filtered(),r=>r.tags.damage_band),['2000–2999','3000–4000']);
+
 // Performance averages use their own observed battles, even without rating data.
 const performance=group('["表现组"]',[
   {result:'win',rating_delta:10,comp7PrestigePoints:100,damageDealt:3000},
