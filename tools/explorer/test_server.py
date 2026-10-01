@@ -35,6 +35,31 @@ class ExplorerTests(unittest.TestCase):
     def test_qualification_not_fake_rating(self):
         self.assertEqual(rank_label({'rank_raw':[3,1,19],'qualification':True}),'定级赛')
 
+    def test_entry_rank_uses_prebattle_rank_and_keeps_missing(self):
+        dimensions=self.data['dimensions']
+        entry=next(d for d in dimensions if d['key']=='entry_rank')
+        self.assertEqual(entry['label'],'本人进场分段')
+        self.assertEqual(entry['kind'],'赛前')
+        self.assertEqual(dimensions[dimensions.index(entry)-1]['key'],'lobby_type')
+        self.assertEqual(entry['order'],['传说','勇士',
+            *(rank+division for rank in ('黄金','白银','青铜','黑铁') for division in 'ABCDE'),
+            '定级赛','未知'])
+        crossed=0
+        for row in self.data['records']:
+            if not row['players']:
+                self.assertEqual(row['tags']['entry_rank'],'未知')
+                continue
+            own=next(p for p in row['players'] if p['is_self'])
+            self.assertEqual(row['tags']['entry_rank'],own['rank_display'])
+            if row.get('qualification'):
+                self.assertEqual(row['tags']['entry_rank'],'定级赛')
+            else:
+                low,high=own['rank_rating_range']
+                self.assertLessEqual(low,row['rating_before'])
+                self.assertLessEqual(row['rating_before'],high)
+                crossed+=not low<=row['rating_after']<=high
+        self.assertGreater(crossed,0) # Cross-division matches must keep their entry rank.
+
     def test_lobby_boundaries_and_full_room_count(self):
         def room(ranks):
             return [dict(rank_raw=[rank,1,0],is_self=i==13,is_ally=i>=7)

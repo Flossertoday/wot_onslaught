@@ -40,6 +40,11 @@ python tools/replay_analysis/sync_replays.py
 各自按对应字段有值的场次计算，真实 0 计入、缺失不补估；无值显示“—”，悬停可看有值场数。
 切换结果保留当前分组和筛选。保存视图也保存结果指标，旧版视图恢复为胜率。
 左侧添加多个分组标签，并叠加多值筛选。窄屏时先点“展开标签与筛选”。
+“局型”旁的“本人进场分段”使用本场战报中的本人战前分段，可分组或筛选。
+选择该分组时默认按传说、勇士、黄金 A–E、白银 A–E、青铜 A–E、黑铁 A–E 从高到低排列，
+定级赛和未知放在最后；多标签组合先比较本人分段，再比较其它标签，同样适用于三个结果视图。
+筛选值也按此顺序排列；可改用结果指标排序，保存视图会保留分段及排序选择。
+缺失分段保持未知，不按赛后积分或相邻场次倒推。
 原五个分段菜单项合并为“局型”：按含本人的全房间统计，跳过定级赛玩家。
 高压局有勇士/传说且黄金、勇士、传说合计 ≥10；
 低压局白银/青铜合计 ≥10（不含黑铁）；
@@ -87,6 +92,7 @@ python -m unittest discover -s tools/explorer -p test_*.py
 node --check tools/explorer/app.js
 node tools/explorer/test_scenario.cjs
 node tools/explorer/test_results.cjs
+node tools/explorer/test_entry_rank.cjs
 ```
 
 缺失机制调查复现：

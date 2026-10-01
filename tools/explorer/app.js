@@ -29,12 +29,21 @@ function renderDateControls(){
   });
 }
 function options(selected){return data.dimensions.map(d=>`<option value="${d.key}" ${d.key===selected?'selected':''}>${esc(d.label)}${d.kind==='战后'?' · 战后':''}</option>`).join('');}
+function compareLabels(key,a,b){
+  const order=dimension(key)?.order;
+  if(order){const index=v=>{const i=order.indexOf(v);return i<0?order.length:i;};const diff=index(a)-index(b);if(diff)return diff;}
+  return String(a??'').localeCompare(String(b??''),'zh-CN');
+}
+function updateDimensionSort(added){
+  if(added==='entry_rank')state.sort='rank_desc';
+  else if(state.sort==='rank_desc'&&!state.dims.includes('entry_rank'))state.sort='result_asc';
+}
 function renderControls(){
   $('dimensions').innerHTML=state.dims.map((d,i)=>`<div class="dim-row"><select aria-label="分组标签 ${i+1}" data-dim="${i}">${options(d)}</select><button aria-label="删除分组标签 ${i+1}" data-remove-dim="${i}" ${state.dims.length===1?'disabled':''}>×</button></div>`).join('');
-  document.querySelectorAll('[data-dim]').forEach(el=>el.onchange=()=>{state.dims[+el.dataset.dim]=el.value;state.dims=[...new Set(state.dims)];selectedGroup=null;renderControls();render();});
-  document.querySelectorAll('[data-remove-dim]').forEach(el=>el.onclick=()=>{state.dims.splice(+el.dataset.removeDim,1);selectedGroup=null;renderControls();render();});
+  document.querySelectorAll('[data-dim]').forEach(el=>el.onchange=()=>{state.dims[+el.dataset.dim]=el.value;state.dims=[...new Set(state.dims)];updateDimensionSort(el.value);selectedGroup=null;renderControls();render();});
+  document.querySelectorAll('[data-remove-dim]').forEach(el=>el.onclick=()=>{state.dims.splice(+el.dataset.removeDim,1);updateDimensionSort();selectedGroup=null;renderControls();render();});
   $('filters').innerHTML=state.filters.map((f,i)=>{
-    const vals=[...new Set(data.records.map(r=>r.tags[f.key]))].sort((a,b)=>a.localeCompare(b,'zh-CN'));
+    const vals=[...new Set(data.records.map(r=>r.tags[f.key]))].sort((a,b)=>compareLabels(f.key,a,b));
     return `<div class="filter"><div class="filter-head"><select aria-label="筛选标签 ${i+1}" data-filter-key="${i}">${options(f.key)}</select><button aria-label="删除筛选 ${i+1}" data-remove-filter="${i}">×</button></div><select multiple aria-label="筛选值 ${i+1}" data-filter-values="${i}">${vals.map(v=>`<option value="${esc(v)}" ${f.values.includes(v)?'selected':''}>${esc(v)}</option>`).join('')}</select><p class="hint">空选 = 全部；Ctrl / ⌘ 多选。组内或，组间且。</p></div>`;
   }).join('');
   document.querySelectorAll('[data-filter-key]').forEach(el=>el.onchange=()=>{state.filters[+el.dataset.filterKey]={key:el.value,values:[]};selectedGroup=null;renderControls();render();});
@@ -79,6 +88,13 @@ function compareResults(a,b,metric,sort){
   if(av==null||bv==null)return av==null?(bv==null?0:1):-1;
   return (sort==='result_desc'?bv-av:av-bv)||bm.count-am.count;
 }
+function compareGroups(a,b,metric,sort,dims){
+  if(sort!=='rank_desc'&&sort!=='name')return compareResults(a,b,metric,sort);
+  const av=JSON.parse(a.key),bv=JSON.parse(b.key);
+  const keys=sort==='rank_desc'?['entry_rank',...dims.filter(k=>k!=='entry_rank')]:dims;
+  for(const key of keys){const i=dims.indexOf(key);if(i<0)continue;const diff=compareLabels(key,av[i],bv[i]);if(diff)return diff;}
+  return 0;
+}
 function restoreState(saved){
   if(!saved||!Array.isArray(saved.dims)||!saved.dims.length||!Array.isArray(saved.filters)||saved.filters.some(f=>!Array.isArray(f.values)))throw Error('Invalid view');
   const dims=[...new Set(saved.dims.map(k=>RETIRED_RANK_DIMENSIONS.has(k)?'lobby_type':k))];
@@ -87,7 +103,7 @@ function restoreState(saved){
   const metric=saved.metric??'win'; // Old saved views were explicitly about win rate.
   if(!Object.hasOwn(RESULTS,metric))throw Error('Invalid result');
   const sort=saved.sort==='win_rate'?'result_asc':saved.sort??'result_asc';
-  if(!['result_asc','result_desc','total','unknown','name','estimated'].includes(sort)||(sort==='estimated'&&metric!=='win'))throw Error('Invalid sort');
+  if(!['result_asc','result_desc','total','unknown','name','estimated','rank_desc'].includes(sort)||(sort==='estimated'&&metric!=='win')||(sort==='rank_desc'&&!dims.includes('entry_rank')))throw Error('Invalid sort');
   return {...defaultState(),...saved,dims,filters,metric,sort};
 }
 function renderResultControls(){
@@ -95,7 +111,7 @@ function renderResultControls(){
   document.querySelectorAll('[data-result]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.result===state.metric)));
   $('min-label').textContent=isWin?'分组至少有多少场已知胜负':'分组至少有多少场'+config.label+'数据';
   $('bounds-control').hidden=!isWin;
-  const options=[['result_asc',config.mean+'：低 → 高'],['result_desc',config.mean+'：高 → 低'],
+  const options=[...(state.dims.includes('entry_rank')?[['rank_desc','本人进场分段：高 → 低']]:[]),['result_asc',config.mean+'：低 → 高'],['result_desc',config.mean+'：高 → 低'],
     ...(isWin?[['estimated','估计胜率（30% 情景）：低 → 高']]:[]),['total','总场数：多 → 少'],['unknown',config.label+'缺失占比：高 → 低'],['name','标签名称']];
   $('sort').innerHTML=options.map(([key,label])=>`<option value="${key}">${label}</option>`).join('');
   $('sort').value=state.sort;
@@ -146,7 +162,7 @@ function render(){
   const rows=filtered(),all=stats(rows),groups=new Map();
   for(const r of rows){const key=JSON.stringify(state.dims.map(d=>r.tags[d]));if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);}
   const list=[...groups.entries()].map(([key,rows])=>({key,rows,...stats(rows)})).filter(g=>resultSummary(g,state.metric).count>=state.min);
-  list.sort((a,b)=>compareResults(a,b,state.metric,state.sort));
+  list.sort((a,b)=>compareGroups(a,b,state.metric,state.sort,state.dims));
   renderOverview(all);
   $('quality').innerHTML=`<strong>数据覆盖：</strong>当前 ${all.unknown} 场结果未知，其中 ${all.eligible} 场无最终战报，统一假设提前离场并按 30% 估计。${all.unassigned?`另有 ${all.unassigned} 场结果异常，未纳入估计。`:''}${all.unknown?'<button id="inspect-unknown">查看未知场</button>':''}`;
   if($('inspect-unknown'))$('inspect-unknown').onclick=()=>{state.filters=state.filters.filter(f=>f.key!=='result').concat([{key:'result',values:['未知']}]);selectedGroup=null;renderControls();render();};
@@ -195,9 +211,9 @@ function wire(){
   document.querySelectorAll('[data-date-preset]').forEach(button=>button.onclick=()=>{
     Object.assign(state,datePresetRange(button.dataset.datePreset));selectedGroup=null;render();
   });
-  document.querySelectorAll('[data-result]').forEach(button=>button.onclick=()=>{state.metric=button.dataset.result;state.sort='result_asc';renderResultControls();render();});
+  document.querySelectorAll('[data-result]').forEach(button=>button.onclick=()=>{state.metric=button.dataset.result;if(state.sort!=='rank_desc')state.sort='result_asc';renderResultControls();render();});
   $('controls-toggle').onclick=()=>{const open=$('controls').classList.toggle('expanded');$('controls-toggle').setAttribute('aria-expanded',String(open));$('controls-toggle').textContent=open?'收起标签与筛选':'展开标签与筛选';};
-  $('add-dimension').onclick=()=>{const next=data.dimensions.find(d=>!state.dims.includes(d.key));if(next){state.dims.push(next.key);selectedGroup=null;renderControls();render();}};
+  $('add-dimension').onclick=()=>{const next=data.dimensions.find(d=>!state.dims.includes(d.key));if(next){state.dims.push(next.key);updateDimensionSort(next.key);selectedGroup=null;renderControls();render();}};
   $('add-filter').onclick=()=>{state.filters.push({key:'map',values:[]});renderControls();};
   $('reset').onclick=()=>{state=defaultState();selectedGroup=null;renderControls();render();};
   for(const [id,key] of [['date-from','from'],['date-to','to'],['sort','sort']])$(id).onchange=()=>{state[key]=$(id).value;selectedGroup=null;render();};
