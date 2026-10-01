@@ -76,6 +76,30 @@ class SyncTests(unittest.TestCase):
         self.assertEqual(report['conflicts'], ['battle.wotreplay'])
         self.assertEqual(target.read_bytes(), b'local original')
 
+    def test_conflict_in_last_event_byte_with_same_size_and_mtime(self):
+        source = self.replay()
+        with source.open('ab') as stream:
+            stream.write(b'x' * (512 * 1024))
+        os.utime(source, (time.time()-60, time.time()-60))
+        self.assertEqual(self.sync()['copied'], 1)
+        target = next(self.destination.rglob('*.wotreplay'))
+        stat = target.stat()
+        with target.open('r+b') as stream:
+            stream.seek(-1, os.SEEK_END)
+            stream.write(b'y')
+        os.utime(target, ns=(stat.st_atime_ns, stat.st_mtime_ns))
+        self.assertEqual(self.sync()['conflicts'], ['battle.wotreplay'])
+
+    def test_invalid_second_block_is_rejected_before_copy_publication(self):
+        source = self.replay()
+        raw = source.read_bytes()
+        source.write_bytes(raw[:4] + struct.pack('<I', 2) + raw[8:])
+        os.utime(source, (time.time()-60, time.time()-60))
+        report = self.sync()
+        self.assertEqual(report['copied'], 0)
+        self.assertEqual(len(report['errors']), 1)
+        self.assertEqual(list(self.destination.rglob('*.wotreplay')), [])
+
     def test_temp_recent_and_malformed_are_skipped(self):
         self.replay('temp.wotreplay')
         recent = self.replay('recent.wotreplay')

@@ -1,6 +1,5 @@
 """Copy completed Onslaught replays into map folders without changing source files."""
 import argparse
-import hashlib
 import json
 import os
 import re
@@ -16,9 +15,16 @@ ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_SOURCE = Path('C:/Games/World_of_Tanks_CN/replays')
 
 
-def digest(path):
-    with path.open('rb') as stream:
-        return hashlib.file_digest(stream, 'sha256').hexdigest()
+def same_content(left, right):
+    # Synchronization only needs exact equality; computing two hashes adds CPU work.
+    # Read every byte, including events, and never infer equality from timestamps.
+    with left.open('rb') as source, right.open('rb') as target:
+        while True:
+            block = source.read(256 * 1024)
+            if block != target.read(256 * 1024):
+                return False
+            if not block:
+                return True
 
 
 def signature(path):
@@ -45,7 +51,7 @@ def sync_replays(source=DEFAULT_SOURCE, destination=ROOT / 'replays', min_age=10
             if path.name.lower() == 'temp.wotreplay' or time.time() - path.stat().st_mtime < min_age:
                 report['pending'] += 1
                 continue
-            header = read_blocks(path)[0]
+            header = read_blocks(path, header_only=True)[0]
             if not isinstance(header, dict):
                 raise ValueError('invalid replay header')
             if header.get('gameplayID') != 'comp7' or header.get('battleType') != 43:
@@ -56,7 +62,7 @@ def sync_replays(source=DEFAULT_SOURCE, destination=ROOT / 'replays', min_age=10
                 raise ValueError('invalid mapName')
             target = destination / map_id.replace('_', '-', 1) / path.name
             if target.exists():
-                same = digest(path) == digest(target)
+                same = same_content(path, target)
                 if signature(path) != before:
                     report['pending'] += 1
                 elif same:
@@ -77,7 +83,7 @@ def sync_replays(source=DEFAULT_SOURCE, destination=ROOT / 'replays', min_age=10
                 os.link(temporary, target)
                 report['copied'] += 1
             except FileExistsError:
-                if digest(temporary) == digest(target):
+                if same_content(temporary, target):
                     report['existing'] += 1
                 else:
                     report['conflicts'].append(path.name)

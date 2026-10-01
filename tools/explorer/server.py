@@ -8,11 +8,13 @@ import subprocess
 import sys
 import tempfile
 import webbrowser
+import zipfile
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote
+from startup_cache import dependency_stamp, load_cached_data, save_cached_data
 
 ROOT = Path(__file__).resolve().parents[2]
 ASSETS = Path(__file__).resolve().parent
@@ -158,6 +160,7 @@ def build_data(evidence=EVIDENCE, investigation_evidence=None):
 
 
 def load_startup_data(source=DEFAULT_SOURCE, game=DEFAULT_SOURCE.parent):
+    game = Path(game)
     messages = []
     if source is not None:
         report = sync_replays(source, ROOT/'replays')
@@ -169,22 +172,35 @@ def load_startup_data(source=DEFAULT_SOURCE, game=DEFAULT_SOURCE.parent):
             messages.append('部分录像未同步，请查看启动窗口的具体原因。')
     else:
         messages.append('已跳过源目录同步。')
+    cutoff = datetime.now(timezone(timedelta(hours=8)))
+    data = load_cached_data(ROOT, game, cutoff)
+    if data is not None:
+        messages.append(f"已校验并复用分析缓存，共 {len(data['records'])} 场录像；日期窗口已更新。")
+        data['metadata']['startup_message'] = ' '.join(messages)
+        return data
     cache = ROOT/'.drafts/explorer'
     try:
+        before = dependency_stamp(ROOT, game)
         cache.mkdir(parents=True, exist_ok=True)
         # Each launch builds privately; historical evidence is never overwritten.
         with tempfile.TemporaryDirectory(dir=cache, prefix='snapshot-') as folder:
             evidence = Path(folder)
-            cutoff = datetime.now(timezone(timedelta(hours=8))).isoformat()
             print('Refreshing replay analysis...', flush=True)
             result = subprocess.run([
                 sys.executable, str(ROOT/'tools/replay_analysis/audit.py'),
                 '--replays', str(ROOT/'replays'), '--game', str(game),
-                '--cutoff', cutoff, '--output', str(evidence),
+                '--cutoff', cutoff.isoformat(), '--output', str(evidence), '--data-only',
             ], capture_output=True, text=True, timeout=180)
             if result.returncode:
                 raise RuntimeError(result.stdout + result.stderr)
             data = build_data(evidence, investigation_evidence=EVIDENCE)
+            try:
+                audit = json.loads((evidence/'audit.json').read_text(encoding='utf-8'))
+                hashes = {row['file']: row['sha256'] for row in load_csv(evidence/'battles.csv')}
+                if dependency_stamp(ROOT, game) == before:
+                    save_cached_data(ROOT, game, audit['client_entry_sha256'], hashes, data)
+            except (OSError, ValueError, KeyError, TypeError, zipfile.BadZipFile) as error:
+                print(f'Analysis cache unavailable: {error}', flush=True)
         messages.append(f"分析已更新，共 {len(data['records'])} 场录像；默认显示最近七天。")
     except (OSError, ValueError, KeyError, RuntimeError, subprocess.SubprocessError) as error:
         print(f'Analysis refresh failed: {error}', flush=True)

@@ -3,6 +3,7 @@ import json
 import struct
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from audit import bh_adjust, read_blocks, summarize, win_interval
@@ -54,6 +55,26 @@ class AuditTests(unittest.TestCase):
             raw = json.dumps({'mapName':'a'}).encode()
             p.write_bytes(struct.pack('<III', 0x11343212, 1, len(raw))+raw+b'opaque binary')
             self.assertEqual(read_blocks(p), [{'mapName':'a'}])
+
+    def test_header_only_does_not_parse_result_but_full_validation_still_does(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp)/'a.wotreplay'
+            raw = json.dumps({'mapName':'a'}).encode()
+            path.write_bytes(struct.pack('<III', 0x11343212, 2, len(raw))+raw+
+                             struct.pack('<I', 10)+b'broken')
+            self.assertEqual(read_blocks(path, header_only=True), [{'mapName':'a'}])
+            with self.assertRaisesRegex(ValueError, 'truncated'):
+                read_blocks(path)
+
+    def test_non_statistical_summary_does_not_import_scipy(self):
+        real_import = __import__
+        def guarded_import(name, *args, **kwargs):
+            if name.startswith('scipy'):
+                raise AssertionError('unnecessary SciPy import')
+            return real_import(name, *args, **kwargs)
+        with patch('builtins.__import__', side_effect=guarded_import):
+            self.assertEqual(summarize([dict(in_window=True, map_id='a', map_name='A',
+                                             result='win')])[0]['win_rate'], 1)
 
     def test_phase_and_result_packets_are_distinct(self):
         data = (struct.pack('<IIfI', 4, 0x16, 50., 3)

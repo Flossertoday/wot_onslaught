@@ -22,6 +22,7 @@ class StartupTests(unittest.TestCase):
         def run(command, **kwargs):
             output = Path(command[command.index('--output')+1])
             self.assertIn('--cutoff', command)
+            self.assertIn('--data-only', command)
             self.assertTrue(command[command.index('--cutoff')+1].endswith('+08:00'))
             self.assertEqual(command[command.index('--replays')+1], str(self.root/'replays'))
             for name in ('audit.json', 'battles.csv', 'players.csv'):
@@ -36,6 +37,34 @@ class StartupTests(unittest.TestCase):
         self.assertIn('分析已更新', data['metadata']['startup_message'])
         self.assertEqual(len(data['records']), 431)
         self.assertEqual(len(list((self.root/'.drafts/explorer').iterdir())), 0)
+
+    def test_verified_cache_skips_extractor_and_keeps_sync_message(self):
+        cached = dict(metadata={}, records=[{}])
+        report = dict(copied=0, existing=1, ignored=2, pending=0, conflicts=[], errors=[])
+        with patch.object(server, 'ROOT', self.root), \
+                patch.object(server, 'sync_replays', return_value=report), \
+                patch.object(server, 'load_cached_data', return_value=cached), \
+                patch.object(server.subprocess, 'run') as run, \
+                contextlib.redirect_stdout(io.StringIO()):
+            result = server.load_startup_data()
+        run.assert_not_called()
+        self.assertIn('已有 1，已跳过非天梯 2', result['metadata']['startup_message'])
+        self.assertIn('已校验并复用分析缓存', result['metadata']['startup_message'])
+
+    def test_cache_write_failure_keeps_successful_analysis(self):
+        def run(command, **kwargs):
+            output = Path(command[command.index('--output')+1])
+            for name in ('audit.json', 'battles.csv', 'players.csv'):
+                shutil.copy2(server.EVIDENCE/name, output/name)
+            return subprocess.CompletedProcess(command, 0, '', '')
+        with patch.object(server, 'ROOT', self.root), \
+                patch.object(server.subprocess, 'run', side_effect=run), \
+                patch.object(server, 'save_cached_data', side_effect=OSError('disk full')), \
+                contextlib.redirect_stdout(io.StringIO()):
+            data = server.load_startup_data(source=None)
+        self.assertIn('分析已更新', data['metadata']['startup_message'])
+        self.assertNotIn('历史快照', data['metadata']['startup_message'])
+        self.assertEqual(len(data['records']), 431)
 
     def test_sync_message_marks_non_onslaught_as_skipped(self):
         report = dict(copied=69, existing=431, ignored=81, pending=1, conflicts=[], errors=[])

@@ -25,7 +25,7 @@ METRICS = ('damageDealt', 'damageAssistedRadio', 'damageAssistedTrack',
            'comp7PrestigePoints', 'roleSkillUsed', 'poiCapturedByOwnTeam')
 
 
-def read_blocks(path):
+def read_blocks(path, *, header_only=False):
     with path.open('rb') as f:
         def read(n):
             data = f.read(n)
@@ -41,6 +41,8 @@ def read_blocks(path):
             if size > 32 * 1024 * 1024:
                 raise ValueError('oversized JSON block')
             blocks.append(json.loads(read(size)))
+            if header_only:
+                break
         return blocks
 
 
@@ -222,7 +224,8 @@ def extract(path, root, cutoff, client, cache):
 
 
 def summarize(rows, fields=('map_id', 'map_name'), test_maps=False):
-    from scipy.stats import fisher_exact
+    if test_maps:
+        from scipy.stats import fisher_exact
     groups = collections.defaultdict(list)
     recent = [r for r in rows if r['in_window'] and not r.get('duplicate')]
     all_known = [r for r in recent if r['result'] != 'unknown']
@@ -267,6 +270,7 @@ def main():
     parser.add_argument('--game', type=Path, default=Path('C:/Games/World_of_Tanks_CN'))
     parser.add_argument('--cutoff', required=True, help='ISO datetime with UTC offset; exclusive')
     parser.add_argument('--output', required=True, type=Path)
+    parser.add_argument('--data-only', action='store_true', help='Skip summary tables and exploratory SciPy tests (GUI)')
     args = parser.parse_args()
     cutoff = datetime.fromisoformat(args.cutoff)
     if cutoff.tzinfo is None:
@@ -320,9 +324,10 @@ def main():
     (args.output/'audit.json').write_text(json.dumps(evidence, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
     write_csv(args.output/'battles.csv', rows)
     write_csv(args.output/'players.csv', players)
-    write_csv(args.output/'maps.csv', summarize(rows, test_maps=True))
-    write_csv(args.output/'map_teams.csv', summarize(rows, ('map_id', 'map_name', 'team')))
-    write_csv(args.output/'map_header_vehicles.csv', summarize(rows, ('map_id', 'map_name', 'header_vehicle')))
+    if not args.data_only:
+        write_csv(args.output/'maps.csv', summarize(rows, test_maps=True))
+        write_csv(args.output/'map_teams.csv', summarize(rows, ('map_id', 'map_name', 'team')))
+        write_csv(args.output/'map_header_vehicles.csv', summarize(rows, ('map_id', 'map_name', 'header_vehicle')))
     print(json.dumps({k:v for k,v in evidence.items() if k not in ('client_entry_sha256','spawn_definitions','caveats')}, ensure_ascii=True, indent=2))
     if failures:
         raise SystemExit('Some files failed: review audit.json before using summary tables.')
