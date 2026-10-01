@@ -14,7 +14,7 @@ const RESULTS={rating:{label:'积分变化',mean:'场均积分变化',format:sig
 function defaultState(){return {metric:'rating',dims:['map'],filters:[],from:data.metadata.window_start.slice(0,10),to:data.metadata.cutoff.slice(0,10),min:0,sort:'result_asc',bounds:true};}
 // Replay calendar dates follow the server's UTC+08 convention.
 function datePresetRange(preset,now=new Date()){
-  const offsets={today:[0,0],yesterday:[1,1],beforeYesterday:[2,2],threeDays:[2,0],sevenDays:[6,0]}[preset];
+  const offsets={today:[0,0],yesterday:[1,1],threeDays:[2,0],fiveDays:[4,0],sevenDays:[6,0]}[preset];
   if(!offsets)throw Error('未知日期快捷选项');
   const today=new Date(now.getTime()+8*60*60*1000);
   const day=offset=>{const date=new Date(today);date.setUTCDate(date.getUTCDate()-offset);return date.toISOString().slice(0,10);};
