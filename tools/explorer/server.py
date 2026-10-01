@@ -22,6 +22,9 @@ EVIDENCE = ROOT/'DOCS/status/evidence/2026-09-30-replay-audit'
 sys.path.insert(0, str(ROOT / 'tools/replay_analysis'))
 from sync_replays import DEFAULT_SOURCE, sync_replays
 RANKS = {1:'传说', 2:'勇士', 3:'黄金', 4:'白银', 5:'青铜', 6:'黑铁'}
+ENTRY_RANK_ORDER = ['传说', '勇士',
+                    *(RANKS[rank]+division for rank in range(3,7) for division in 'ABCDE'),
+                    '定级赛', '未知']
 CLASSES = {'heavyTank':'重坦','mediumTank':'中坦','lightTank':'轻坦','AT-SPG':'坦歼','SPG':'火炮'}
 NUMBERS = {'team','header_team','rating_before','rating_after','rating_delta','duration','health',
            'damageDealt','damageAssistedRadio','damageAssistedTrack','damageAssistedStun',
@@ -143,7 +146,7 @@ def build_data(evidence=EVIDENCE, investigation_evidence=None):
                  replay_path=str(ROOT/'replays'/b['file']),
                  tags=dict(map=b['map_name'],side=f"队伍 {int(b['team'])}" if b.get('team') else '未知',
                            vehicle=vehicle.split(':')[-1],vehicle_class=CLASSES.get(cls,'未知'),
-                           day=b['started_at'][:10],lobby_type=lobby_type(party),
+                           day=b['started_at'][:10],lobby_type=lobby_type(party),entry_rank=rank_label(b),
                            result={'win':'胜','loss':'负','draw':'平','unknown':'未知'}[b['result']],
                            completeness='有战报' if b['result_status']=='valid' else '无战报' if b['result_status']=='no_result_block' else '战报异常',
                            recording_end=death_state,
@@ -154,12 +157,13 @@ def build_data(evidence=EVIDENCE, investigation_evidence=None):
                            rating_band=rating_band(b.get('rating_delta'))))
         records.append(b)
     dimensions=[('map','地图','赛前'),('side','出生队伍','赛前'),('vehicle','具体坦克','赛前'),('vehicle_class','车辆类别','赛前'),
-                ('day','日期','时间'),('lobby_type','局型','赛前'),
+                ('day','日期','时间'),('lobby_type','局型','赛前'),('entry_rank','本人进场分段','赛前'),
                 ('damage_band','伤害区间','战后'),('prestige_band','本人声望区间','战后'),
                 ('rating_band','本人积分变化区间','战后'),('survival','最终存活状态','战后'),('result','战斗结果','战后'),
                 ('completeness','战报完整性','数据质量'),('recording_end','录制结束状态','数据质量'),('observed_death','本人阵亡（录像观测）','战后')]
     return dict(metadata={k:audit[k] for k in ('cutoff','window_start','recent_count','recent_results')},
-                dimensions=[dict(key=k,label=l,kind=t) for k,l,t in dimensions], records=records,
+                dimensions=[dict(key=k,label=l,kind=t,**({'order':ENTRY_RANK_ORDER} if k=='entry_rank' else {}))
+                            for k,l,t in dimensions], records=records,
                 performance_fields=[dict(key=k,label=l) for k,l in PERFORMANCE_FIELDS],
                 investigation_summary=forensic.get('summary'),control_validation=forensic.get('control_validation'))
 

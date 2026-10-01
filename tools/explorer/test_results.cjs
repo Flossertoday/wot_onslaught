@@ -102,6 +102,13 @@ assert.equal(context.defaultDimensionSort(['map','damage_band']),'name');
 assert.equal(context.defaultDimensionSort(['map']),'result_asc');
 const combinations=['≥4000','<2000','未知','3000–3999','2000–2999'].map(label=>group(JSON.stringify(['地图 A',label]),[]));
 assert.deepEqual(combinations.sort((a,b)=>context.compareResults(a,b,'rating','name',['map','damage_band'])).map(g=>JSON.parse(g.key)[1]),damageOrder);
+assert.deepEqual(combinations.slice().reverse().sort((a,b)=>context.compareGroups(a,b,'rating','name',['map','damage_band'])).map(g=>JSON.parse(g.key)[1]),damageOrder);
+vm.runInContext("state.dims=['entry_rank','damage_band'];state.sort='rank_desc';updateDimensionSort('damage_band')",context);
+assert.equal(vm.runInContext('state.sort',context),'name');
+vm.runInContext("updateDimensionSort('entry_rank')",context);
+assert.equal(vm.runInContext('state.sort',context),'rank_desc');
+vm.runInContext("state.dims=['damage_band'];updateDimensionSort()",context);
+assert.equal(vm.runInContext('state.sort',context),'name');
 
 // Performance averages use their own observed battles, even without rating data.
 const performance=group('["表现组"]',[
