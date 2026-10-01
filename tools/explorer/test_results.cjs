@@ -124,14 +124,31 @@ for(const metric of ['rating','prestige','win']){
   vm.runInContext(`state.metric='${metric}'`,context);
   context.renderGroupTable([performance,{...empty,key:'["未知"]'}],performance);
   const headers=nodes.get('group-head').innerHTML;
-  assert.ok(headers.includes('<th >平均声望</th><th >平均输出</th>'));
+  assert.ok(headers.includes('<th >平均声望</th>'));
+  assert.ok(!headers.includes('平均输出'));
   assert.ok(!headers.includes('相对其余')&&!headers.includes('缺失')&&!headers.includes('>未知<'));
   const html=nodes.get('groups').innerHTML;
   assert.ok(html.includes('本人声望；有值 3 / 5 场">200</td>'));
-  assert.ok(html.includes('本人造成的伤害；有值 3 / 5 场">1,500</td>'));
-  assert.ok(html.includes('本人造成的伤害；有值 0 / 1 场">—</td>'));
-  assert.equal((headers.match(/<th /g)||[]).length,8);
-  assert.equal((html.match(/<td[ >]/g)||[]).length,16);
+  assert.ok(html.includes('本人声望；有值 0 / 1 场">—</td>'));
+  assert.ok(!html.includes('本人造成的伤害'));
+  const columns=metric==='rating'?8:7;
+  assert.equal((headers.match(/<th /g)||[]).length,columns);
+  assert.equal((html.match(/<td[ >]/g)||[]).length,columns*2);
+  if(metric==='rating')assert.ok(headers.includes('<th >场均积分变化</th><th >胜率</th>'));
   if(metric==='win')assert.ok(headers.includes('class="bounds-col">含未知的上下界'));
+  context.renderGroupTable([],performance);
+  assert.ok(nodes.get('groups').innerHTML.includes(`colspan="${columns}"`));
 }
+const scenario=group('["含无战报"]',[
+  {result:'win',rating_delta:20}, {result:'loss',rating_delta:-10},
+  {result:'unknown',result_status:'no_result_block'}
+]);
+const noReport=group('["仅无战报"]',[{result:'unknown',result_status:'no_result_block'}]);
+vm.runInContext("state.metric='rating'",context);
+context.renderGroupTable([scenario,noReport,{...empty,key:'["结果异常"]'}],scenario);
+const ratingTable=nodes.get('groups').innerHTML;
+assert.match(ratingTable,/metric-primary positive">\+5<\/td><td class="estimate-cell"[^>]*>43\.3%/);
+assert.match(ratingTable,/30\.0%<span class="small">无战报按 30%/);
+assert.match(ratingTable,/>—<span class="small">结果异常未估计/);
+assert.equal(scenario.p,.5);
 console.log('Result views: distributions, outcome means, excluded-group baselines, missing-last sorting and saved-view migration passed.');

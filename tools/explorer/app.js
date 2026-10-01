@@ -133,21 +133,22 @@ function renderOverview(all){
 }
 function renderGroupTable(list,all){
   const metric=state.metric,isWin=metric==='win',fmt=RESULTS[metric].format;
-  const headers=isWin?['标签组合','场数 / 已知','胜 / 负','估计胜率 · 30% 情景','已知胜率 · 95% 区间','平均声望','平均输出','含未知的上下界']:
-    ['标签组合','总场 / 有值',RESULTS[metric].mean,'中位数 · 中间 50%',metric==='rating'?'已记录积分合计':'胜局 / 负局平均声望',metric==='rating'?'胜局加分 / 负局扣分':'胜 / 负','平均声望','平均输出'];
-  $('group-head').innerHTML=headers.map((label,i)=>`<th ${isWin&&i===7?'class="bounds-col"':''}>${label}</th>`).join('');
+  const headers=isWin?['标签组合','场数 / 已知','胜 / 负','估计胜率 · 30% 情景','已知胜率 · 95% 区间','平均声望','含未知的上下界']:
+    ['标签组合','总场 / 有值',RESULTS[metric].mean,...(metric==='rating'?['胜率']:[]),'中位数 · 中间 50%',metric==='rating'?'已记录积分合计':'胜局 / 负局平均声望',metric==='rating'?'胜局加分 / 负局扣分':'胜 / 负','平均声望'];
+  $('group-head').innerHTML=headers.map((label,i)=>`<th ${isWin&&i===headers.length-1?'class="bounds-col"':''}>${label}</th>`).join('');
   $('groups-table').classList.toggle('bounds-hidden',isWin&&!state.bounds);
   $('groups').innerHTML=list.length?list.map((g,i)=>{
     const m=resultSummary(g,metric);
     const restTotal=all.total-g.total,robust=isWin&&restTotal>0&&g.boundHigh<(all.wins-g.wins)/restTotal;
     const title=`<td class="group-name"><button data-group="${i}">${JSON.parse(g.key).map(esc).join(' / ')}</button>${m.count<10?'<span class="small">小样本 · 先看对局</span>':''}${robust?'<span class="robust" title="当前样本中，本组未知全胜、其余未知全负，本组仍较低。">本组上界仍低于其余下界</span>':''}</td>`;
-    const performanceCells=`<td title="本人声望；有值 ${g.prestige.count} / ${g.total} 场">${number(g.prestige.mean)}</td><td title="本人造成的伤害；有值 ${g.damage.count} / ${g.total} 场">${number(g.damage.mean)}</td>`;
+    const performanceCells=`<td title="本人声望；有值 ${g.prestige.count} / ${g.total} 场">${number(g.prestige.mean)}</td>`;
+    const winRateCell=`<td class="estimate-cell" title="胜率 =（已知胜场 + 无最终战报场数 × 30%）÷ 总场数；不改写逐场结果">${pct(g.estimate)}<span class="small">${g.unassigned?'结果异常未估计':g.eligible?'无战报按 30%':'无须补估'}</span></td>`;
     const outcomes=`${g.wins} / ${g.losses}`;
     const content=isWin?
-      `<td>${g.total} / ${g.known}</td><td>${outcomes}</td><td class="estimate-cell">${pct(g.estimate)}<span class="small">${g.unassigned?'结果异常未估计':g.eligible?'无战报按 30%':'无须补估'}</span></td><td class="rate-cell"><div class="rate-main"><b>${pct(g.p)}</b><span class="ci">${pct(g.low)}–${pct(g.high)}</span></div>${g.p!=null?`<div class="track"><i class="interval" style="left:${g.low*100}%;width:${(g.high-g.low)*100}%"></i><i class="point" style="left:${g.p*100}%"></i></div>`:''}</td>${performanceCells}<td class="bounds-col">${pct(g.boundLow)}–${pct(g.boundHigh)}</td>`:
-      `<td>${g.total} / ${m.count}</td><td class="metric-primary ${metric==='rating'&&m.mean!=null?(m.mean<0?'negative':'positive'):''}">${fmt(m.mean)}</td><td>${fmt(m.median)}<span class="small">${fmt(m.q1)} ～ ${fmt(m.q3)}</span></td><td>${metric==='rating'?signed(m.total):fmt(m.win.mean)+' / '+fmt(m.loss.mean)}${metric==='prestige'?`<span class="small">有值 ${m.win.count} 胜 / ${m.loss.count} 负</span>`:''}</td><td>${metric==='rating'?fmt(m.win.mean)+' / '+fmt(m.loss.mean)+`<span class="small">有值 ${m.win.count} 胜 / ${m.loss.count} 负</span>`:outcomes}</td>${performanceCells}`;
+      `<td>${g.total} / ${g.known}</td><td>${outcomes}</td>${winRateCell}<td class="rate-cell"><div class="rate-main"><b>${pct(g.p)}</b><span class="ci">${pct(g.low)}–${pct(g.high)}</span></div>${g.p!=null?`<div class="track"><i class="interval" style="left:${g.low*100}%;width:${(g.high-g.low)*100}%"></i><i class="point" style="left:${g.p*100}%"></i></div>`:''}</td>${performanceCells}<td class="bounds-col">${pct(g.boundLow)}–${pct(g.boundHigh)}</td>`:
+      `<td>${g.total} / ${m.count}</td><td class="metric-primary ${metric==='rating'&&m.mean!=null?(m.mean<0?'negative':'positive'):''}">${fmt(m.mean)}</td>${metric==='rating'?winRateCell:''}<td>${fmt(m.median)}<span class="small">${fmt(m.q1)} ～ ${fmt(m.q3)}</span></td><td>${metric==='rating'?signed(m.total):fmt(m.win.mean)+' / '+fmt(m.loss.mean)}${metric==='prestige'?`<span class="small">有值 ${m.win.count} 胜 / ${m.loss.count} 负</span>`:''}</td><td>${metric==='rating'?fmt(m.win.mean)+' / '+fmt(m.loss.mean)+`<span class="small">有值 ${m.win.count} 胜 / ${m.loss.count} 负</span>`:outcomes}</td>${performanceCells}`;
     return `<tr ${g.key===selectedGroup?'class="selected"':''}>${title}${content}</tr>`;
-  }).join(''):'<tr><td colspan="8" class="empty">没有符合条件的分组。试着放宽筛选或降低最小有值场数。</td></tr>';
+  }).join(''):`<tr><td colspan="${headers.length}" class="empty">没有符合条件的分组。试着放宽筛选或降低最小有值场数。</td></tr>`;
 }
 function render(){
   renderDateControls();
