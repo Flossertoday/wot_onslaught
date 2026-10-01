@@ -44,7 +44,7 @@ PERFORMANCE_FIELDS = [
 def damage_band(value):
     if value is None:
         return '未知'
-    return '<2000' if value < 2000 else '2000–2999' if value < 3000 else '3000–4000' if value <= 4000 else '>4000'
+    return '<2000' if value < 2000 else '2000–2999' if value < 3000 else '3000–3999' if value < 4000 else '≥4000'
 
 
 def prestige_band(value):

@@ -9,7 +9,10 @@ const resultName={win:'胜',loss:'负',draw:'平',unknown:'未知'};
 const dimension=k=>data.dimensions.find(d=>d.key===k);
 const RETIRED_RANK_DIMENSIONS=new Set(['self_rank','ally_ranks','enemy_ranks','allies_high','enemies_high']);
 const RETIRED_LOBBY_VALUES=new Set(['白银局','未分类']);
-const RETIRED_DAMAGE_VALUES=new Set(['2000–3999','≥4000']);
+const RETIRED_DAMAGE_VALUES=new Set(['2000–3999','3000–4000','>4000']);
+const DAMAGE_BANDS=['<2000','2000–2999','3000–3999','≥4000','未知'];
+function compareLabels(key,a,b){return key==='damage_band'?DAMAGE_BANDS.indexOf(a)-DAMAGE_BANDS.indexOf(b):a.localeCompare(b,'zh-CN',{numeric:true});}
+function defaultDimensionSort(dims){return dims.includes('damage_band')?'name':'result_asc';}
 const retiredFilter=f=>RETIRED_RANK_DIMENSIONS.has(f.key)||(f.key==='lobby_type'&&f.values.some(v=>RETIRED_LOBBY_VALUES.has(v)))||(f.key==='damage_band'&&f.values.some(v=>RETIRED_DAMAGE_VALUES.has(v)));
 const RESULTS={rating:{label:'积分变化',mean:'场均积分变化',format:signed},prestige:{label:'声望',mean:'平均声望',format:number},win:{label:'胜率',mean:'已知胜率',format:pct}};
 function defaultState(){return {metric:'rating',dims:['map'],filters:[],from:data.metadata.window_start.slice(0,10),to:data.metadata.cutoff.slice(0,10),min:0,sort:'result_asc',bounds:true};}
@@ -32,10 +35,10 @@ function renderDateControls(){
 function options(selected){return data.dimensions.map(d=>`<option value="${d.key}" ${d.key===selected?'selected':''}>${esc(d.label)}${d.kind==='战后'?' · 战后':''}</option>`).join('');}
 function renderControls(){
   $('dimensions').innerHTML=state.dims.map((d,i)=>`<div class="dim-row"><select aria-label="分组标签 ${i+1}" data-dim="${i}">${options(d)}</select><button aria-label="删除分组标签 ${i+1}" data-remove-dim="${i}" ${state.dims.length===1?'disabled':''}>×</button></div>`).join('');
-  document.querySelectorAll('[data-dim]').forEach(el=>el.onchange=()=>{state.dims[+el.dataset.dim]=el.value;state.dims=[...new Set(state.dims)];selectedGroup=null;renderControls();render();});
+  document.querySelectorAll('[data-dim]').forEach(el=>el.onchange=()=>{state.dims[+el.dataset.dim]=el.value;state.dims=[...new Set(state.dims)];state.sort=defaultDimensionSort(state.dims);selectedGroup=null;renderControls();render();});
   document.querySelectorAll('[data-remove-dim]').forEach(el=>el.onclick=()=>{state.dims.splice(+el.dataset.removeDim,1);selectedGroup=null;renderControls();render();});
   $('filters').innerHTML=state.filters.map((f,i)=>{
-    const vals=[...new Set(data.records.map(r=>r.tags[f.key]))].sort((a,b)=>a.localeCompare(b,'zh-CN'));
+    const vals=[...new Set(data.records.map(r=>r.tags[f.key]))].sort((a,b)=>compareLabels(f.key,a,b));
     return `<div class="filter"><div class="filter-head"><select aria-label="筛选标签 ${i+1}" data-filter-key="${i}">${options(f.key)}</select><button aria-label="删除筛选 ${i+1}" data-remove-filter="${i}">×</button></div><select multiple aria-label="筛选值 ${i+1}" data-filter-values="${i}">${vals.map(v=>`<option value="${esc(v)}" ${f.values.includes(v)?'selected':''}>${esc(v)}</option>`).join('')}</select><p class="hint">空选 = 全部；Ctrl / ⌘ 多选。组内或，组间且。</p></div>`;
   }).join('');
   document.querySelectorAll('[data-filter-key]').forEach(el=>el.onchange=()=>{state.filters[+el.dataset.filterKey]={key:el.value,values:[]};selectedGroup=null;renderControls();render();});
@@ -70,11 +73,15 @@ function resultDifference(group,all,metric){
   const g=resultSummary(group,metric),a=resultSummary(all,metric),restCount=a.count-g.count;
   return g.mean==null||restCount<=0?null:g.mean-(a.total-g.total)/restCount;
 }
-function compareResults(a,b,metric,sort){
+function compareResults(a,b,metric,sort,dims=[]){
   const am=resultSummary(a,metric),bm=resultSummary(b,metric);
   if(sort==='total')return b.total-a.total;
   if(sort==='unknown')return (b.total-bm.count)/b.total-(a.total-am.count)/a.total;
-  if(sort==='name')return a.key.localeCompare(b.key,'zh-CN');
+  if(sort==='name'){
+    const av=JSON.parse(a.key),bv=JSON.parse(b.key);
+    for(let i=0;i<av.length;i++){const delta=compareLabels(dims[i],av[i],bv[i]);if(delta)return delta;}
+    return 0;
+  }
   const av=sort==='estimated'?a.estimate:am.mean,bv=sort==='estimated'?b.estimate:bm.mean;
   // Missing groups always follow observed groups, in either sort direction.
   if(av==null||bv==null)return av==null?(bv==null?0:1):-1;
@@ -97,7 +104,7 @@ function renderResultControls(){
   $('min-label').textContent=isWin?'分组至少有多少场已知胜负':'分组至少有多少场'+config.label+'数据';
   $('bounds-control').hidden=!isWin;
   const options=[['result_asc',config.mean+'：低 → 高'],['result_desc',config.mean+'：高 → 低'],
-    ...(isWin?[['estimated','估计胜率（30% 情景）：低 → 高']]:[]),['total','总场数：多 → 少'],['unknown',config.label+'缺失占比：高 → 低'],['name','标签名称']];
+    ...(isWin?[['estimated','估计胜率（30% 情景）：低 → 高']]:[]),['total','总场数：多 → 少'],['unknown',config.label+'缺失占比：高 → 低'],['name','标签顺序（数值从小到大）']];
   $('sort').innerHTML=options.map(([key,label])=>`<option value="${key}">${label}</option>`).join('');
   $('sort').value=state.sort;
 }
@@ -147,7 +154,7 @@ function render(){
   const rows=filtered(),all=stats(rows),groups=new Map();
   for(const r of rows){const key=JSON.stringify(state.dims.map(d=>r.tags[d]));if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);}
   const list=[...groups.entries()].map(([key,rows])=>({key,rows,...stats(rows)})).filter(g=>resultSummary(g,state.metric).count>=state.min);
-  list.sort((a,b)=>compareResults(a,b,state.metric,state.sort));
+  list.sort((a,b)=>compareResults(a,b,state.metric,state.sort,state.dims));
   renderOverview(all);
   $('quality').innerHTML=`<strong>数据覆盖：</strong>当前 ${all.unknown} 场结果未知，其中 ${all.eligible} 场无最终战报，统一假设提前离场并按 30% 估计。${all.unassigned?`另有 ${all.unassigned} 场结果异常，未纳入估计。`:''}${all.unknown?'<button id="inspect-unknown">查看未知场</button>':''}`;
   if($('inspect-unknown'))$('inspect-unknown').onclick=()=>{state.filters=state.filters.filter(f=>f.key!=='result').concat([{key:'result',values:['未知']}]);selectedGroup=null;renderControls();render();};
@@ -196,7 +203,7 @@ function wire(){
   document.querySelectorAll('[data-date-preset]').forEach(button=>button.onclick=()=>{
     Object.assign(state,datePresetRange(button.dataset.datePreset));selectedGroup=null;render();
   });
-  document.querySelectorAll('[data-result]').forEach(button=>button.onclick=()=>{state.metric=button.dataset.result;state.sort='result_asc';renderResultControls();render();});
+  document.querySelectorAll('[data-result]').forEach(button=>button.onclick=()=>{state.metric=button.dataset.result;state.sort=defaultDimensionSort(state.dims);renderResultControls();render();});
   $('controls-toggle').onclick=()=>{const open=$('controls').classList.toggle('expanded');$('controls-toggle').setAttribute('aria-expanded',String(open));$('controls-toggle').textContent=open?'收起标签与筛选':'展开标签与筛选';};
   $('add-dimension').onclick=()=>{const next=data.dimensions.find(d=>!state.dims.includes(d.key));if(next){state.dims.push(next.key);selectedGroup=null;renderControls();render();}};
   $('add-filter').onclick=()=>{state.filters.push({key:'map',values:[]});renderControls();};

@@ -78,19 +78,30 @@ assert.throws(()=>context.restoreState({...saved,dims:['bad']}));
 
 // Split damage bands must not restore obsolete filters as empty populations.
 vm.runInContext("data.dimensions.push({key:'damage_band'})",context);
-for(const retired of ['2000–3999','≥4000']){
+for(const retired of ['2000–3999','3000–4000','>4000']){
   const migrated=context.restoreState({...saved,dims:['damage_band'],filters:[{key:'map',values:['A']},{key:'damage_band',values:['<2000',retired]}]});
   assert.deepEqual(Array.from(migrated.dims),['damage_band']);
   assert.deepEqual(Array.from(migrated.filters),[{key:'map',values:['A']}]);
   assert.equal(migrated.metric,'prestige');
 }
-for(const value of ['<2000','2000–2999','3000–4000','>4000','未知']){
+for(const value of ['<2000','2000–2999','3000–3999','≥4000','未知']){
   const filters=[{key:'damage_band',values:[value]}];
   assert.deepEqual(Array.from(context.restoreState({...saved,filters}).filters),filters);
 }
-vm.runInContext("data.records=['<2000','2000–2999','3000–4000','>4000','未知'].map(value=>({tags:{day:'2026-09-29',damage_band:value}}));state=restoreState({metric:'rating',dims:['damage_band'],filters:[{key:'damage_band',values:['2000–2999','3000–4000']}]})",context);
+vm.runInContext("data.records=['<2000','2000–2999','3000–3999','≥4000','未知'].map(value=>({tags:{day:'2026-09-29',damage_band:value}}));state=restoreState({metric:'rating',dims:['damage_band'],filters:[{key:'damage_band',values:['2000–2999','3000–3999']}]})",context);
 assert.equal(context.filtered().length,2);
-assert.deepEqual(Array.from(context.filtered(),r=>r.tags.damage_band),['2000–2999','3000–4000']);
+assert.deepEqual(Array.from(context.filtered(),r=>r.tags.damage_band),['2000–2999','3000–3999']);
+const damageOrder=['<2000','2000–2999','3000–3999','≥4000','未知'];
+const damageGroups=[...damageOrder].reverse().map((label,i)=>group(JSON.stringify([label]),[{result:'win',rating_delta:i,comp7PrestigePoints:i}]));
+for(const metric of ['rating','prestige','win']){
+  assert.deepEqual(damageGroups.slice().sort((a,b)=>context.compareResults(a,b,metric,'name',['damage_band'])).map(g=>JSON.parse(g.key)[0]),damageOrder);
+}
+assert.deepEqual([...damageOrder].reverse().sort((a,b)=>context.compareLabels('damage_band',a,b)),damageOrder);
+assert.equal(context.defaultDimensionSort(['damage_band']),'name');
+assert.equal(context.defaultDimensionSort(['map','damage_band']),'name');
+assert.equal(context.defaultDimensionSort(['map']),'result_asc');
+const combinations=['≥4000','<2000','未知','3000–3999','2000–2999'].map(label=>group(JSON.stringify(['地图 A',label]),[]));
+assert.deepEqual(combinations.sort((a,b)=>context.compareResults(a,b,'rating','name',['map','damage_band'])).map(g=>JSON.parse(g.key)[1]),damageOrder);
 
 // Performance averages use their own observed battles, even without rating data.
 const performance=group('["表现组"]',[

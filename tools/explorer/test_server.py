@@ -122,8 +122,8 @@ class ExplorerTests(unittest.TestCase):
     def test_metric_bands_preserve_zero_missing_and_boundaries(self):
         for value,expected in [(None,'未知'),(0,'<2000'),(1999,'<2000'),
                                (2000,'2000–2999'),(2999,'2000–2999'),
-                               (3000,'3000–4000'),(3999,'3000–4000'),
-                               (4000,'3000–4000'),(4001,'>4000')]:
+                               (3000,'3000–3999'),(3999,'3000–3999'),
+                               (4000,'≥4000'),(4001,'≥4000')]:
             with self.subTest(damage=value):
                 self.assertEqual(damage_band(value),expected)
         for row in self.data['records']:
