@@ -7,7 +7,9 @@
 !.worktrees/README.md
 
 # replays
-replays/*
+/replays/
+*.wotreplay
+ReplayCache.db
 
 # local Python analysis cache
 __pycache__/
