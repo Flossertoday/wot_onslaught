@@ -6,5 +6,8 @@
 .worktrees/*
 !.worktrees/README.md
 
+# replays
+replays/*
+
 # local Python analysis cache
 __pycache__/
