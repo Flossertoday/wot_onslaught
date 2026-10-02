@@ -3,18 +3,21 @@
 Run commands from the repository root. Inputs are read-only. Outputs contain no player names
 or account IDs; they retain replay paths, hashes, battle IDs and requested performance/rank data.
 
-Tested environment: Python from the local Anaconda installation, scipy 1.17.1,
-cryptography 46.0.5, xdis 6.3.0. xdis was installed only into ignored `.drafts/deps`;
-it is required only for the optional client bytecode evidence collector.
+Requires Python 3.11+. The normal GUI and replay synchronization use only the
+standard library; optional research dependencies are listed in the root
+`requirements-research.txt`. Install with `python -m pip install -r requirements-research.txt`.
+SciPy is used for full exploratory reports, cryptography for event-stream analysis,
+and xdis only for the optional client bytecode evidence collector.
 
 ```powershell
-python tools/replay_analysis/audit.py --cutoff 2026-09-30T13:32:22+08:00 --output DOCS/status/evidence/2026-09-30-replay-audit
-python tools/replay_analysis/stream_audit.py --battles DOCS/status/evidence/2026-09-30-replay-audit/battles.csv --output DOCS/status/evidence/2026-09-30-replay-audit/stream-audit.json
-python tools/replay_analysis/client_evidence.py --dependencies .drafts/deps --output DOCS/status/evidence/2026-09-30-replay-audit/client-bytecode.json
+python tools/replay_analysis/audit.py --game "D:/Games/World_of_Tanks" --cutoff 2026-10-02T12:00:00+08:00 --output .drafts/my-audit
+python tools/replay_analysis/stream_audit.py --battles .drafts/my-audit/battles.csv --output .drafts/my-audit/stream-audit.json
+python tools/replay_analysis/client_evidence.py --output .drafts/my-audit/client-bytecode.json
 python -m unittest discover -s tools/replay_analysis -p test_*.py
 ```
 
-`--game` defaults to `C:/Games/World_of_Tanks_CN`; `--replays` defaults to `replays`.
+`--game` reads the same local settings/environment as the GUI; there is no fixed install path.
+Commands using game resources accept `--config`; `--replays` defaults to `replays`.
 The cutoff is mandatory and must include a UTC offset. For a new snapshot, choose a new
 output directory so the checked-in historical evidence is retained.
 
@@ -28,8 +31,7 @@ Files:
   missing or invalid results; resolve map spawn and vehicle class definitions; export CSV
   and exploratory map summaries. Error records are preserved and the command fails if any
   file could not be processed. Old files are inventoried, but only in-window files enter summaries.
-- `packed_xml.py`: read-only packed-XML decoder reused from the local
-  `wot_teammate_bulb/tools/research` project; format reference is named in its header.
+- `packed_xml.py`: self-contained read-only packed-XML decoder; format reference is named in its header.
 - `stream_audit.py`: decrypt/decompress then inspect packet framing, phase values and
   result-packet presence; no pickle execution, event simulation or outcome inference.
 - `client_evidence.py`: selected Python 2.7 bytecode disassembly, never import/execute game code.

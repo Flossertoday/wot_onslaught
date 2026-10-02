@@ -17,6 +17,7 @@ from pathlib import Path
 from audit import read_blocks
 from packed_xml import unpack
 from stream_audit import stream
+from local_paths import DEFAULT_CONFIG, local_paths, require_game
 
 
 def investigate(data, own_id):
@@ -77,9 +78,14 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--battles', required=True, type=Path)
     p.add_argument('--replays', type=Path, default=Path('replays'))
-    p.add_argument('--game', type=Path, default=Path('C:/Games/World_of_Tanks_CN'))
+    p.add_argument('--game', type=Path)
+    p.add_argument('--config', type=Path, default=DEFAULT_CONFIG)
     p.add_argument('--output', required=True, type=Path)
     args = p.parse_args()
+    try:
+        args.game = require_game(local_paths(game=args.game, config=args.config)[0], p)
+    except (OSError, ValueError) as error:
+        p.error(str(error))
     with zipfile.ZipFile(args.game/'res/packages/scripts.pkg') as z:
         definition = z.read('scripts/entity_defs/Vehicle.def')
         types = [a.text for a in unpack(definition).findall('ClientMethods/onHealthChanged/Arg')]

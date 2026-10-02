@@ -9,14 +9,20 @@ import json
 import sys
 import zipfile
 from pathlib import Path
+from local_paths import DEFAULT_CONFIG, local_paths, require_game
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--game', type=Path, default=Path('C:/Games/World_of_Tanks_CN'))
+    parser.add_argument('--game', type=Path)
+    parser.add_argument('--config', type=Path, default=DEFAULT_CONFIG)
     parser.add_argument('--dependencies', type=Path)
     parser.add_argument('--output', required=True, type=Path)
     args = parser.parse_args()
+    try:
+        args.game = require_game(local_paths(game=args.game, config=args.config)[0], parser)
+    except (OSError, ValueError) as error:
+        parser.error(str(error))
     if args.dependencies:
         sys.path.insert(0, str(args.dependencies.resolve()))
     from xdis.bytecode import Bytecode

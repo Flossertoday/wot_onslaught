@@ -20,7 +20,8 @@ ROOT = Path(__file__).resolve().parents[2]
 ASSETS = Path(__file__).resolve().parent
 EVIDENCE = ROOT/'DOCS/status/evidence/2026-09-30-replay-audit'
 sys.path.insert(0, str(ROOT / 'tools/replay_analysis'))
-from sync_replays import DEFAULT_SOURCE, sync_replays
+from sync_replays import sync_replays
+from local_paths import DEFAULT_CONFIG, local_paths, require_game
 RANKS = {1:'传说', 2:'勇士', 3:'黄金', 4:'白银', 5:'青铜', 6:'黑铁'}
 ENTRY_RANK_ORDER = ['传说', '勇士',
                     *(RANKS[rank]+division for rank in range(3,7) for division in 'ABCDE'),
@@ -42,6 +43,7 @@ PERFORMANCE_FIELDS = [
     ('lifeTime','生存秒数'), ('shots','射击'), ('directHits','直接命中'),
     ('piercings','穿透'), ('capturePoints','占领点数'),
     ('droppedCapturePoints','防守点数'), ('poiCapturedByOwnTeam','本队战略点占领')]
+_UNSET = object()
 
 
 def damage_band(value):
@@ -144,6 +146,7 @@ def build_data(evidence=EVIDENCE, investigation_evidence=None):
                        else '假设提前离场 / 无战报' if b['result_status']=='no_result_block' else '未确定')
         b.update(id=b['sha256'], players=party, investigation=event,
                  replay_path=str(ROOT/'replays'/b['file']),
+                 replay_available=(ROOT/'replays'/b['file']).is_file(),
                  tags=dict(map=b['map_name'],side=f"队伍 {int(b['team'])}" if b.get('team') else '未知',
                            vehicle=vehicle.split(':')[-1],vehicle_class=CLASSES.get(cls,'未知'),
                            day=b['started_at'][:10],lobby_type=lobby_type(party),entry_rank=rank_label(b),
@@ -156,20 +159,34 @@ def build_data(evidence=EVIDENCE, investigation_evidence=None):
                            prestige_band=prestige_band(b.get('comp7PrestigePoints')),
                            rating_band=rating_band(b.get('rating_delta'))))
         records.append(b)
+    return data_payload({k:audit[k] for k in ('cutoff','window_start','recent_count','recent_results')},
+                        records, forensic)
+
+
+def data_payload(metadata, records, forensic=None):
+    forensic = forensic or {}
+    metadata.setdefault('data_mode', 'local')
     dimensions=[('map','地图','赛前'),('side','出生队伍','赛前'),('vehicle','具体坦克','赛前'),('vehicle_class','车辆类别','赛前'),
                 ('day','日期','时间'),('lobby_type','局型','赛前'),('entry_rank','本人进场分段','赛前'),
                 ('damage_band','伤害区间','战后'),('prestige_band','本人声望区间','战后'),
                 ('rating_band','本人积分变化区间','战后'),('survival','最终存活状态','战后'),('result','战斗结果','战后'),
                 ('completeness','战报完整性','数据质量'),('recording_end','录制结束状态','数据质量'),('observed_death','本人阵亡（录像观测）','战后')]
-    return dict(metadata={k:audit[k] for k in ('cutoff','window_start','recent_count','recent_results')},
+    return dict(metadata=metadata,
                 dimensions=[dict(key=k,label=l,kind=t,**({'order':ENTRY_RANK_ORDER} if k=='entry_rank' else {}))
                             for k,l,t in dimensions], records=records,
                 performance_fields=[dict(key=k,label=l) for k,l in PERFORMANCE_FIELDS],
                 investigation_summary=forensic.get('summary'),control_validation=forensic.get('control_validation'))
 
 
-def load_startup_data(source=DEFAULT_SOURCE, game=DEFAULT_SOURCE.parent):
-    game = Path(game)
+def empty_data(cutoff):
+    return data_payload(dict(cutoff=cutoff.isoformat(), window_start=(cutoff-timedelta(days=7)).isoformat(),
+                             recent_count=0, recent_results={}, data_mode='local'), [])
+
+
+def load_startup_data(source=None, game=_UNSET):
+    if game is _UNSET:
+        game, _ = local_paths()
+    game = Path(game) if game is not None else None
     messages = []
     if source is not None:
         report = sync_replays(source, ROOT/'replays')
@@ -182,6 +199,12 @@ def load_startup_data(source=DEFAULT_SOURCE, game=DEFAULT_SOURCE.parent):
     else:
         messages.append('已跳过源目录同步。')
     cutoff = datetime.now(timezone(timedelta(hours=8)))
+    if game is None or not any((ROOT/'replays').rglob('*.wotreplay')):
+        data = empty_data(cutoff)
+        messages.append('尚未配置游戏目录。双击 Start-Explorer.cmd 完成设置，或使用 --game 指定游戏目录。'
+                        if game is None else '本地尚无天梯录像。请在游戏中启用录像保存，完成天梯对局后重新启动。')
+        data['metadata']['startup_message'] = ' '.join(messages)
+        return data
     data = load_cached_data(ROOT, game, cutoff)
     if data is not None:
         messages.append(f"已校验并复用分析缓存，共 {len(data['records'])} 场录像；日期窗口已更新。")
@@ -213,8 +236,8 @@ def load_startup_data(source=DEFAULT_SOURCE, game=DEFAULT_SOURCE.parent):
         messages.append(f"分析已更新，共 {len(data['records'])} 场录像；默认显示最近七天。")
     except (OSError, ValueError, KeyError, RuntimeError, subprocess.SubprocessError) as error:
         print(f'Analysis refresh failed: {error}', flush=True)
-        data = build_data(EVIDENCE)
-        messages.append('分析刷新失败，当前显示历史快照，新录像尚未纳入。请查看启动窗口。')
+        data = empty_data(cutoff)
+        messages.append('分析刷新失败，当前未加载对局。请检查游戏目录、录像版本和启动窗口的错误信息。')
     data['metadata']['startup_message'] = ' '.join(messages)
     return data
 
@@ -231,7 +254,13 @@ def make_handler(data):
                 row=replays.get(path.rsplit('/',1)[-1])
                 if not row:
                     return self.send_error(404)
-                raw=Path(row['replay_path']).read_bytes()
+                target = (ROOT/'replays'/row['file']).resolve()
+                if not target.is_relative_to((ROOT/'replays').resolve()):
+                    return self.send_error(404, 'Replay is outside the local archive')
+                try:
+                    raw = target.read_bytes()
+                except OSError:
+                    return self.send_error(404, 'Replay file is not available on this computer')
                 if hashlib.sha256(raw).hexdigest()!=row['sha256']:
                     return self.send_error(409,'Replay differs from analysis snapshot')
                 return self.send_bytes(raw,'application/octet-stream',Path(row['file']).name)
@@ -254,20 +283,44 @@ def make_handler(data):
     return Handler
 
 
-def main():
+def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
+    if sys.version_info < (3, 11):
+        parser.error('Python 3.11 or newer is required')
     parser.add_argument('--port',type=int,default=8765)
     parser.add_argument('--open-browser',action='store_true')
-    parser.add_argument('--replay-source',type=Path,default=DEFAULT_SOURCE)
-    parser.add_argument('--game',type=Path,default=DEFAULT_SOURCE.parent)
+    parser.add_argument('--replay-source',type=Path)
+    parser.add_argument('--game',type=Path)
+    parser.add_argument('--config',type=Path,default=DEFAULT_CONFIG)
+    parser.add_argument('--demo',action='store_true',help='View the bundled historical research dataset without a game installation')
     parser.add_argument('--no-sync',action='store_true',help='Analyze local replays without copying from the game')
-    args=parser.parse_args()
-    data = load_startup_data(None if args.no_sync else args.replay_source, args.game)
-    server=ThreadingHTTPServer(('127.0.0.1',args.port),make_handler(data))
+    args=parser.parse_args(argv)
+    if not 0 <= args.port <= 65535:
+        parser.error('--port must be between 0 and 65535')
+    if args.demo:
+        data = build_data(EVIDENCE)
+        data['metadata'].update(data_mode='demo', startup_message='演示模式：显示随项目提供的历史研究数据，并非你的对局。原始录像不随项目分发。')
+    else:
+        try:
+            game, source = local_paths(args.game, args.replay_source, args.config)
+            if game is not None:
+                require_game(game, parser)
+            data = load_startup_data(None if args.no_sync else source, game)
+        except (OSError, ValueError) as error:
+            parser.error(str(error))
+    try:
+        server=ThreadingHTTPServer(('127.0.0.1',args.port),make_handler(data))
+    except OSError as error:
+        parser.error(f'Cannot open local port {args.port}: {error}. Try --port 8766')
     print(f'Onslaught explorer: http://127.0.0.1:{server.server_port}',flush=True)
     if args.open_browser:
         webbrowser.open(f'http://127.0.0.1:{server.server_port}')
-    server.serve_forever()
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
 
 
 if __name__=='__main__':

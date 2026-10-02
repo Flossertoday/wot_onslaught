@@ -10,9 +10,9 @@ import time
 from pathlib import Path
 
 from audit import read_blocks
+from local_paths import DEFAULT_CONFIG, local_paths
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_SOURCE = Path('C:/Games/World_of_Tanks_CN/replays')
 
 
 def same_content(left, right):
@@ -32,7 +32,11 @@ def signature(path):
     return stat.st_size, stat.st_mtime_ns
 
 
-def sync_replays(source=DEFAULT_SOURCE, destination=ROOT / 'replays', min_age=10):
+def sync_replays(source=None, destination=ROOT / 'replays', min_age=10):
+    if source is None:
+        _, source = local_paths()
+    if source is None:
+        raise ValueError('Set --source or configure a game folder in explorer.local.json')
     source, destination = Path(source), Path(destination)
     if source.resolve() == destination.resolve():
         raise ValueError('Source and destination must differ')
@@ -97,10 +101,18 @@ def sync_replays(source=DEFAULT_SOURCE, destination=ROOT / 'replays', min_age=10
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--source', type=Path, default=DEFAULT_SOURCE)
+    parser.add_argument('--source', type=Path)
+    parser.add_argument('--game', type=Path)
+    parser.add_argument('--config', type=Path, default=DEFAULT_CONFIG)
     parser.add_argument('--destination', type=Path, default=ROOT / 'replays')
     args = parser.parse_args()
-    report = sync_replays(args.source, args.destination)
+    try:
+        _, source = local_paths(args.game, args.source, args.config)
+        if source is None:
+            parser.error('Set --source, --game, or configure explorer.local.json')
+        report = sync_replays(source, args.destination)
+    except (OSError, ValueError) as error:
+        parser.error(str(error))
     print(json.dumps(report, ensure_ascii=True, indent=2))
     return 1 if report['errors'] or report['conflicts'] else 0
 

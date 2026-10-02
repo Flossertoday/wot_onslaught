@@ -16,6 +16,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path, PureWindowsPath
 
 from packed_xml import unpack
+from local_paths import DEFAULT_CONFIG, local_paths, require_game
 
 TZ = timezone(timedelta(hours=8))
 METRICS = ('damageDealt', 'damageAssistedRadio', 'damageAssistedTrack',
@@ -267,11 +268,16 @@ def write_csv(path, rows):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--replays', type=Path, default=Path('replays'))
-    parser.add_argument('--game', type=Path, default=Path('C:/Games/World_of_Tanks_CN'))
+    parser.add_argument('--game', type=Path)
+    parser.add_argument('--config', type=Path, default=DEFAULT_CONFIG)
     parser.add_argument('--cutoff', required=True, help='ISO datetime with UTC offset; exclusive')
     parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--data-only', action='store_true', help='Skip summary tables and exploratory SciPy tests (GUI)')
     args = parser.parse_args()
+    try:
+        args.game = require_game(local_paths(game=args.game, config=args.config)[0], parser)
+    except (OSError, ValueError) as error:
+        parser.error(str(error))
     cutoff = datetime.fromisoformat(args.cutoff)
     if cutoff.tzinfo is None:
         parser.error('--cutoff must include a UTC offset')

@@ -17,6 +17,11 @@ class StartupTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
+        (self.root/'replays').mkdir()
+        (self.root/'replays/a.wotreplay').write_bytes(b'mocked extractor input')
+        paths = patch.object(server, 'local_paths', return_value=(self.root/'game', None))
+        paths.start()
+        self.addCleanup(paths.stop)
 
     def test_refresh_passes_current_cutoff_and_reads_new_output(self):
         def run(command, **kwargs):
@@ -46,7 +51,7 @@ class StartupTests(unittest.TestCase):
                 patch.object(server, 'load_cached_data', return_value=cached), \
                 patch.object(server.subprocess, 'run') as run, \
                 contextlib.redirect_stdout(io.StringIO()):
-            result = server.load_startup_data()
+            result = server.load_startup_data(source=self.root/'source')
         run.assert_not_called()
         self.assertIn('已有 1，已跳过非天梯 2', result['metadata']['startup_message'])
         self.assertIn('已校验并复用分析缓存', result['metadata']['startup_message'])
@@ -74,17 +79,18 @@ class StartupTests(unittest.TestCase):
                 patch.object(server.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, '', '')), \
                 patch.object(server, 'build_data', return_value=data), \
                 contextlib.redirect_stdout(io.StringIO()):
-            result = server.load_startup_data()
+            result = server.load_startup_data(source=self.root/'source')
         message = result['metadata']['startup_message']
         self.assertIn('新增 69，已有 431，已跳过非天梯 81', message)
         self.assertIn('共 500 场录像', message)
 
-    def test_failure_keeps_historical_data_and_visible_warning(self):
+    def test_failure_shows_no_other_persons_historical_data(self):
         with patch.object(server, 'ROOT', self.root), patch.object(server.subprocess, 'run', side_effect=OSError('missing Python')), contextlib.redirect_stdout(io.StringIO()):
             data = server.load_startup_data(source=self.root/'missing')
         self.assertIn('错误 1', data['metadata']['startup_message'])
-        self.assertIn('当前显示历史快照', data['metadata']['startup_message'])
-        self.assertEqual(len(data['records']), 431)
+        self.assertIn('当前未加载对局', data['metadata']['startup_message'])
+        self.assertEqual(data['records'], [])
+        self.assertEqual(data['metadata']['data_mode'], 'local')
 
     def test_changed_replay_does_not_inherit_old_investigation(self):
         for name in ('audit.json', 'battles.csv', 'players.csv'):

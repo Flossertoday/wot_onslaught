@@ -12,6 +12,7 @@ VERSION = 1
 EVIDENCE_PATH = Path('DOCS/status/evidence/2026-09-30-replay-audit')
 INPUTS = ('tools/explorer/server.py', 'tools/explorer/startup_cache.py',
           'tools/replay_analysis/audit.py', 'tools/replay_analysis/packed_xml.py',
+          'tools/replay_analysis/local_paths.py',
           *(str(EVIDENCE_PATH / name) for name in
             ('audit.json', 'battles.csv', 'players.csv', 'missing-results.json')),
           'replays/ReplayCache.db')

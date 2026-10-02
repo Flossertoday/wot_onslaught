@@ -43,11 +43,14 @@ def inflate(raw):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--cache',type=Path,default=Path(os.environ['APPDATA'])/'Wargaming.net/WorldOfTanks/battle_results')
+    appdata = os.environ.get('APPDATA')
+    p.add_argument('--cache',type=Path,default=Path(appdata)/'Wargaming.net/WorldOfTanks/battle_results' if appdata else None)
     p.add_argument('--battles',type=Path,required=True)
     p.add_argument('--replays',type=Path,default=Path('replays'))
     p.add_argument('--output',type=Path,required=True)
     args=p.parse_args()
+    if args.cache is None:
+        p.error('Set --cache to your battle_results directory (APPDATA is unavailable)')
     with args.battles.open(encoding='utf-8-sig') as f:
         known={r['arena_id']:r for r in csv.DictReader(f) if r['result_status']=='valid'}
     fields=('arenaCreateTime','bonusType','winnerTeam','duration')

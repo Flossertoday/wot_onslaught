@@ -1,0 +1,4 @@
+# Optional research tools and the complete test suite; not needed by the GUI.
+scipy==1.17.1
+cryptography==46.0.5
+xdis==6.3.0
