@@ -12,7 +12,8 @@ class LocalPathTests(unittest.TestCase):
     def setUp(self):
         folder = tempfile.TemporaryDirectory()
         self.addCleanup(folder.cleanup)
-        self.root = Path(folder.name)
+        # Windows runners can provide a DOS short-name temp path (RUNNER~1).
+        self.root = Path(folder.name).resolve()
         self.config = self.root/'explorer.local.json'
         env = patch.dict(os.environ, {}, clear=True)
         env.start()

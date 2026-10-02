@@ -35,6 +35,12 @@ instructions and automated checks. Those were release blockers for a new user.
 - Browser checks confirmed empty startup, explicit demo labelling, absent demo download
   controls and real replay details, with no captured JavaScript errors.
 - Markdown relative links, ignore rules and whitespace checks passed.
+- An export of the committed source (without private settings, recordings or caches)
+  passed empty and demo startup from an unrelated directory with `python -S`;
+  all browser assets loaded in both modes.
+- Initial hosted Windows CI exposed a fixture expectation comparing a DOS short-name
+  temp directory against its resolved full path. The fixture now resolves its root;
+  runtime path resolution already returned the correct full path.
 
 ## Release scope
 
