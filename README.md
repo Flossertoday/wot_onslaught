@@ -12,8 +12,10 @@ vehicles, lobby composition, rating changes, prestige and win rate.
 1. 从本项目 GitHub 页面的 **Code → Download ZIP** 下载并解压，或克隆项目。
    将项目放在你有写入权限的目录中。
 2. 安装 [Python 3.11+](https://www.python.org/downloads/windows/)，确保 `py` 或 `python` 命令可用。
-3. 双击 `Start-Explorer.cmd`。首次启动，在控制台输入你的游戏安装目录。
-   该目录必须包含 `res/packages/scripts.pkg`；路径中可以有空格。
+3. 双击 `Start-Explorer.cmd`。首次启动会用最多约 2 秒查找游戏安装目录。
+   找到一个时按 Enter 接受；找到多个时输入编号选择，也可输入 `0` 手动填写目录。
+   未找到时直接回退到手动输入；按 Enter 可先打开空页面。
+   游戏目录必须包含 `res/packages/scripts.pkg`；路径中可以有空格和中文。
 4. 设置保存在项目根目录的 `explorer.local.json`，后续启动自动复用。
    工具从该游戏目录的 `replays/` 复制已完成的天梯录像，再打开本地分析页面。
 5. 首次没有录像时显示空页面；在游戏中启用录像保存，完成天梯对局后重新启动工具。
@@ -41,6 +43,11 @@ python tools/explorer/server.py --no-sync --port 8766
 `WOT_GAME_DIR` / `WOT_REPLAY_SOURCE` 环境变量，再优先于本地设置。
 改变 `--game` 时默认录像源随新游戏目录变化；独立录像目录则使用 `--replay-source`。
 程序只监听 `127.0.0.1`；控制台会显示实际访问地址。
+
+自动查找仅在双击启动且尚未配置游戏目录时进行，检查 Windows 安装记录及本地固定磁盘上
+少量常见位置，不递归扫描整盘。候选目录同时校验 `WorldOfTanks.exe` 和
+`res/packages/scripts.pkg`；没有 `replays/` 目录也能完成设置。
+已保存目录、环境变量及命令行参数优先于自动查找；单独配置的录像源目录会保留。
 
 ## 不安装游戏先试用
 
