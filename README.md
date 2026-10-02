@@ -1,5 +1,7 @@
 # WoT 天梯对局分析器
 
+开发协作：**GPT-6 Astra**、**GPT-6.1 Sol**（OpenAI Codex）。
+
 World of Tanks Onslaught replay explorer: a local browser UI for comparing maps,
 vehicles, lobby composition, rating changes, prestige and win rate.
 
